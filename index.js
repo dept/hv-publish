@@ -1,82 +1,14 @@
+const Color = require('turbocolor');
 const request = require('request-promise-native');
 const zipFolder = require('zip-folder');
 const Netlify = require('netlify');
-const Color = require('turbocolor');
-const parseArgs = require('minimist');
-const package = require('./package.json');
 
-console.log(Color.white.bgBlue.bold('HV Publish'), Color.yellow.bgBlue.bold(`v${package.version}`));
-
-// Parsing Arguments
-// =================
-
-/*
-    Input needed:
-
-    netlify (default: ARGS.netlify)
-    hvify (default: env.HVIFY_TOKEN)
-
-    commit (default: env.BITBUCKET_COMMIT)
-    branch (default: env.BITBUCKET_BRANCH)
-
-    source (default: ./build)
-    project (default: env.BITBUCKET_REPO_SLUG)
-    site (default: hv-${project}.netlify.com)
-*/
-
-const ARGS = Object.assign(
-	{
-		netlify: process.env.NETLIFY_ACCESS_TOKEN,
-		hvify: process.env.HVIFY_TOKEN,
-		commit: process.env.BITBUCKET_COMMIT,
-		branch: process.env.BITBUCKET_BRANCH,
-		source: './build',
-		project: process.env.BITBUCKET_REPO_SLUG,
-		site: null
-	},
-	parseArgs(process.argv, {
-		alias: {
-			s: 'source',
-			n: 'name',
-			p: 'project'
-		}
-	})
-);
-
-let hasInputError = false;
-
-if (!ARGS.netlify) {
-	console.log(Color.red('- Missing: netlify or $NETLIFY_ACCESS_TOKEN'));
-	hasInputError = true;
-}
-if (!ARGS.hvify) {
-	console.log(Color.red('- Missing: hvify or $HVIFY_TOKEN'));
-	hasInputError = true;
-}
-if (!ARGS.commit) {
-	console.log(Color.red('- Missing: commit or $BITBUCKET_COMMIT'));
-	hasInputError = true;
-}
-if (!ARGS.branch) {
-	console.log(Color.red('- Missing: branch or $BITBUCKET_BRANCH'));
-	hasInputError = true;
-}
-if (!ARGS.project) {
-	console.log(Color.red('- Missing: project or $BITBUCKET_REPO_SLUG'));
-	hasInputError = true;
-}
-if (!ARGS.site) {
-	ARGS.sitename = `hv-${ARGS.project}`;
-	ARGS.site = `hv-${ARGS.project}.netlify.com`;
-}
-if (hasInputError) {
-	console.dir(ARGS, { colors: true });
-	process.exit();
-}
+let commit, ARGS;
 
 function getCommitInfo(commit, branch) {
-	const cmd = `git log --pretty=format:'{%n  "hash": "%H",%n  "subject": "%s",%n  "date": "%aD",%n  "author": {%n    "name": "%aN",%n    "email": "%aE",%n  }%n},' -n 1 ${commit}`;
+	const cmd = `git log --pretty=format:'{%n  "hash": "%H",%n  "subject": "%s",%n  "date": "%aD",%n  "author": {%n    "name": "%aN",%n    "email": "%aE"%n  }%n}' -n 1 ${commit}`;
 	const json = (execSync = require('child_process').execSync(cmd));
+	console.log(json.toString());
 	return Object.assign(JSON.parse(json), {
 		branch: branch
 	});
@@ -165,7 +97,9 @@ async function saveToFirebase(data) {
 // Publish (Main)
 // =================
 
-async function publish() {
+async function publish(args) {
+	ARGS = args;
+	commit = getCommitInfo(ARGS.commit, ARGS.branch);
 	const deploy_url = await deployToNetlify();
 	saveToFirebase({
 		url: deploy_url,
@@ -178,8 +112,4 @@ async function publish() {
 	});
 }
 
-const commit = getCommitInfo(ARGS.commit, ARGS.branch);
-
-publish()
-	.then(() => console.log('done.'))
-	.catch(error => console.log(error));
+module.exports = publish;

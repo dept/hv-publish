@@ -13,6 +13,9 @@
     "zip-folder": "^1.0.0"
   },
   "scripts": {
-    "build": "node index.js"
+    "deploy": "node index.js"
+  },
+  "bin": {
+    "hv-publish": "./cli.js"
   }
 }
