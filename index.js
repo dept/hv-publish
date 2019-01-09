@@ -61,7 +61,12 @@ async function deployToNetlify() {
 
 	console.log(Color.cyan('Site for'), netlify_site);
 	console.dir(site, { colors: true });
-	// Uploading zip, actually deploying
+
+	// Add headers file
+
+	require('fs').writeFileSync(`${ARGS.source}/_headers`, '/*\n  Cache-Control: public, max-age=31536000\n');
+
+	// Uploading files, actually deploying
 
 	const result = await client.deploy(netlify_site, ARGS.source, {
 		draft: false,

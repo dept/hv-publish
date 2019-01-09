@@ -1,0 +1,146 @@
+#!/bin/bash
+
+##### CONSTANTS
+
+RESTORE='\033[0m'
+RED='\033[00;31m'
+GREEN='\033[00;32m'
+YELLOW='\033[00;33m'
+BLUE='\033[00;34m'
+PURPLE='\033[00;35m'
+CYAN='\033[00;36m'
+LIGHTGRAY='\033[00;37m'
+
+printTitle()
+{
+    color=${2:-$CYAN}
+    echo -e "${color}${1}${RESTORE}"
+}
+
+usage()
+{
+    echo -e '
+USAGE:
+
+save2repo --source ./build
+
+'$PURPLE'
+-s | --source path/to/source
+'$CYAN'
+    Website directory to upload. Default: ./build
+
+'$PURPLE'
+-p | --path bitbucket_user/bitbucket_repo
+'$CYAN'
+    The bitbucket repository path (will only be considered if destination is not set).
+    Default: {BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}-build
+
+    So if your current repository is hinderlingvolkart/project
+    your destination path will be hinderlingvolkart/project-build
+
+'$PURPLE'
+-d | --destination https://user:password@domain.com/path/to/repository.git
+'$CYAN'
+    The destination repository url with credentials.
+    Default: Based on current bitbucket repository, see path parameter.
+
+'$PURPLE'
+-h | --help
+'$CYAN'
+    Prints this help.
+'$RESTORE'
+    '
+}
+
+
+##### ARGUMENTS
+
+repopath=${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}-build
+source_directory=build
+
+source_directory=./build
+site_name=$BITBUCKET_REPO_SLUG
+git_email="hvdevice@gmail.com" # could be build@hinderlingvolkart.com too
+git_name="HV Build"
+
+while [ "$1" != "" ]; do
+	echo "Arg $1"
+    case $1 in
+        -s | --source )         shift
+                                source_directory=$1
+                                ;;
+        -p | --path )           shift
+                                repopath=$1
+                                ;;
+        -d | --destination )    shift
+                                repo_url=$1
+                                ;;
+        -h | --help )           usage
+                                exit
+                                ;;
+        * )                     exit 1
+    esac
+    shift
+done
+
+
+# only do the bitbucket thing if repo_url is not set
+
+if [ -z ${repo_url+x} ]; then
+    # if build repository is available, status will be 200, otherwise 404
+    printTitle "Checking availability of bitbucket build repository: $repopath"
+    status=$(curl -sI GET --user "${BB_AUTH_STRING}" "https://api.bitbucket.org/2.0/repositories/$repopath" 2>/dev/null | head -n 1 | cut -d$' ' -f2)
+    if [ $status = "404" ]; then
+        printTitle "➕  Creating new build repository $repopath"
+        # let's first get info about current repository
+        curl -s -X GET --user "${BB_AUTH_STRING}" "https://api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}" | jq '{scm: .scm, is_private: .is_private, name: (.name + " (Build)"), project: {key: .project.key}}' > current-project.json
+        # and from here we will create the new repository (same privacy, same type (scm), same project)
+        curl -s -X POST --user "${BB_AUTH_STRING}" -H "Content-Type: application/json" -d @current-project.json "https://api.bitbucket.org/2.0/repositories/$repopath" > new-project.json
+    else
+        printTitle "☑️  Found build repository $repopath"
+    fi
+    repo_url=https://$BB_AUTH_STRING@bitbucket.org/$repopath.git
+fi
+
+printTitle "Destination Repository: $repo_url"
+
+# Push to build repo
+dir=repo
+branch_name=$BITBUCKET_BRANCH
+
+git log --pretty=format:"%s" > $source_directory/.gitlog
+
+printTitle "Checking if branch $branch_name already exists ..."
+
+mkdir $dir
+cd $dir
+
+if [[ `git ls-remote $repo_url $branch_name` ]]; then
+    printTitle "- Branch $branch_name already exists, checking out."
+    git clone --branch $branch_name $repo_url .
+else
+    printTitle "- Branch name $branch_name doesn't exist yet - will create."
+    git clone $repo_url .
+    git checkout --orphan $branch_name
+    git rm -rfq --ignore-unmatch .
+fi
+
+git config --global user.email $git_email
+git config --global user.name $git_name
+git config http.postBuffer 157286400
+
+
+rsync -ac ../$source_directory/ . --delete --exclude .gitignore --exclude .git
+
+git add -u
+git add -A .
+last_commit_messages="$(git diff --color=never --staged .gitlog | egrep "^\+[^\+]")"
+
+if git diff-index --quiet HEAD --; then
+    # no changes
+    printTitle "🆗  No changes to previous build. Nothing to commit."
+else
+    git commit -a -m "Build ${BITBUCKET_BUILD_NUMBER} -- $last_commit_messages"
+    git push origin $branch_name
+    printTitle "✅  Pushed changes to build repository: Build ${BITBUCKET_BUILD_NUMBER} -- $last_commit_messages"
+fi

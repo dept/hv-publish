@@ -16,6 +16,7 @@
     "deploy": "node index.js"
   },
   "bin": {
-    "hv-publish": "./cli.js"
+    "hv-publish": "./bin/hv-publish.js",
+    "save2repo": "./bin/save2repo"
   }
 }

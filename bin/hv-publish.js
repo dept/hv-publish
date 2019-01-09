@@ -4,8 +4,8 @@ const Color = require('turbocolor');
 
 const parseArgs = require('minimist');
 
-const package = require('./package.json');
-const publish = require('./index.js');
+const package = require('../package.json');
+const publish = require('../index.js');
 
 console.log(Color.white.bgBlue.bold('HV Publish'), Color.yellow.bgBlue.bold(`v${package.version}`));
 
