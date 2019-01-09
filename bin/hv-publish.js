@@ -34,6 +34,7 @@ const ARGS = Object.assign(
 		branch: process.env.BITBUCKET_BRANCH,
 		source: './build',
 		project: process.env.BITBUCKET_REPO_SLUG,
+		name: null, // the netlify site name base – defaults to project (only for compatibility)
 		site: null
 	},
 	parseArgs(process.argv, {
@@ -67,9 +68,12 @@ if (!ARGS.project) {
 	console.log(Color.red('- Missing: project or $BITBUCKET_REPO_SLUG'));
 	hasInputError = true;
 }
+if (!ARGS.name) {
+	ARGS.name = `${ARGS.project}`;
+}
 if (!ARGS.site) {
-	ARGS.sitename = `hv-${ARGS.project}`;
-	ARGS.site = `hv-${ARGS.project}.netlify.com`;
+	ARGS.sitename = `hv-${ARGS.name}`;
+	ARGS.site = `hv-${ARGS.name}.netlify.com`;
 }
 if (hasInputError) {
 	console.dir(ARGS, { colors: true });
