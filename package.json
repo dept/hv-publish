@@ -6,6 +6,7 @@
   "author": "Severin Klaus <sk@hinderlingvolkart.com>",
   "license": "MIT",
   "dependencies": {
+    "minimist": "^1.2.0",
     "netlify": "^2.2.1",
     "request": "^2.88.0",
     "request-promise-native": "^1.0.5",
