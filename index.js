@@ -6,7 +6,7 @@ const Netlify = require('netlify');
 let commit, ARGS;
 
 function getCommitInfo(commit, branch) {
-	const cmd = `git log --pretty=format:'{%n  "hash": "%H",%n  "subject": "%s",%n  "date": "%aD",%n  "author": {%n    "name": "%aN",%n    "email": "%aE"%n  }%n}' -n 1 ${commit}`;
+	const cmd = `git log --pretty=format:'{%n  "hash": "%H",%n  "subject": "%s",%n  "date": "%aI",%n  "author": {%n    "name": "%aN",%n    "email": "%aE"%n  }%n}' -n 1 ${commit}`;
 	const json = (execSync = require('child_process').execSync(cmd));
 	console.log(json.toString());
 	return Object.assign(JSON.parse(json), {
