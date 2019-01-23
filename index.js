@@ -1,6 +1,5 @@
 const Color = require('turbocolor');
 const request = require('request-promise-native');
-const zipFolder = require('zip-folder');
 const Netlify = require('netlify');
 
 let commit, ARGS;

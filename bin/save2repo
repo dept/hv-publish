@@ -134,7 +134,9 @@ rsync -ac ../$source_directory/ . --delete --exclude .gitignore --exclude .git
 
 git add -u
 git add -A .
-last_commit_messages="$(git diff --color=never --staged .gitlog | egrep "^\+[^\+]")"
+
+# head will limit to max n number of lines
+last_commit_messages="$(git diff --color=never --staged .gitlog | egrep "^\+[^\+]") | head -n20"
 
 if git diff-index --quiet HEAD --; then
     # no changes
