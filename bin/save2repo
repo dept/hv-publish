@@ -117,10 +117,10 @@ cd $dir
 
 if [[ `git ls-remote $repo_url $branch_name` ]]; then
     printTitle "- Branch $branch_name already exists, checking out."
-    git clone --branch $branch_name $repo_url .
+    git clone --branch $branch_name --depth 25 $repo_url .
 else
     printTitle "- Branch name $branch_name doesn't exist yet - will create."
-    git clone $repo_url .
+    git clone --depth 1 $repo_url .
     git checkout --orphan $branch_name
     git rm -rfq --ignore-unmatch .
 fi
