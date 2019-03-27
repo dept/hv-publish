@@ -115,7 +115,7 @@ printTitle "Checking if branch $branch_name already exists ..."
 mkdir $dir
 cd $dir
 
-if [[ `git ls-remote $repo_url $branch_name` ]]; then
+if [[ `git ls-remote $repo_url refs/*/$branch_name` ]]; then
     printTitle "- Branch $branch_name already exists, checking out."
     git clone --branch $branch_name --depth 25 $repo_url .
 else
@@ -146,3 +146,6 @@ else
     git push origin $branch_name
     printTitle "✅  Pushed changes to build repository: Build ${BITBUCKET_BUILD_NUMBER} -- $last_commit_messages"
 fi
+
+cd ..
+rm -rf $dir

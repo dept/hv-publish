@@ -1,6 +1,6 @@
 {
   "name": "hv-publish",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Publish static website to Hinderling Volkart Frontend Development Site",
   "main": "index.js",
   "author": "Severin Klaus <sk@hinderlingvolkart.com>",
