@@ -1,6 +1,7 @@
 const Color = require('turbocolor');
 const request = require('request-promise-native');
 const Netlify = require('netlify');
+const FS = require('fs');
 
 let commit, ARGS;
 
@@ -64,12 +65,12 @@ async function deployToNetlify() {
 
 	// Add headers file
 
-	require('fs').writeFileSync(`${ARGS.source}/_headers`, '/*\n  Cache-Control: public, max-age=31536000\n');
+	FS.writeFileSync(`${ARGS.source}/_headers`, '/*\n  Cache-Control: public, max-age=31536000\n');
 
 	// Uploading files, actually deploying
 
 	const result = await client.deploy(netlify_site, ARGS.source, {
-		draft: false,
+		draft: true,
 		message: commit.subject,
 		parallelUpload: 30,
 		statusCb: statusObj => {
