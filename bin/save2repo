@@ -129,14 +129,17 @@ git config --global user.email $git_email
 git config --global user.name $git_name
 git config http.postBuffer 157286400
 
-
-rsync -ac ../$source_directory/ . --delete --exclude .gitignore --exclude .git
+echo ".gitignore" >> .rsync-exclude.txt
+echo ".git" >> .rsync-exclude.txt
+rsync -ac ../$source_directory/ . --delete --exclude-from='.rsync-exclude.txt'
+cat .rsync-exclude.txt
+rm -f .rsync-exclude.txt
 
 git add -u
 git add -A .
 
 # head will limit to max n number of lines
-last_commit_messages="$(git diff --color=never --staged .gitlog | egrep "^\+[^\+]") | head -n20"
+last_commit_messages="$(git diff --color=never --staged .gitlog | egrep "^\+[^\+]" | head -n20)"
 
 if git diff-index --quiet HEAD --; then
     # no changes
