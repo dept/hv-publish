@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const Color = require('turbocolor');
+const Color = require('ansi-colors');
 
 const parseArgs = require('minimist');
 
@@ -35,19 +35,24 @@ const ARGS = Object.assign(
 		source: './build',
 		project: process.env.BITBUCKET_REPO_SLUG,
 		name: null, // the netlify site name base – defaults to project (only for compatibility)
-		site: null
+		site: null,
+		version: null
 	},
 	parseArgs(process.argv, {
 		alias: {
 			s: 'source',
 			n: 'name',
-			p: 'project'
+			p: 'project',
+			v: 'version'
 		}
 	})
 );
 
 let hasInputError = false;
 
+if (ARGS.version) {
+	console.log(`HV Publish Version: ${package.version}`);
+}
 if (!ARGS.netlify) {
 	console.log(Color.red('- Missing: netlify or $NETLIFY_ACCESS_TOKEN'));
 	hasInputError = true;

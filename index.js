@@ -1,4 +1,4 @@
-const Color = require('turbocolor');
+const Color = require('ansi-colors');
 const request = require('request-promise-native');
 const Netlify = require('netlify');
 const FS = require('fs');
