@@ -1,13 +1,13 @@
 {
   "name": "hv-publish",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Publish static website to Hinderling Volkart Frontend Development Site",
   "main": "index.js",
   "author": "Severin Klaus <sk@hinderlingvolkart.com>",
   "license": "MIT",
   "dependencies": {
     "minimist": "^1.2.0",
-    "netlify": "^2.2.1",
+    "netlify": "^2.4.8",
     "request": "^2.88.0",
     "request-promise-native": "^1.0.5",
     "turbocolor": "^2.6.1"

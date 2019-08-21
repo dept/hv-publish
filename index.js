@@ -93,7 +93,7 @@ async function saveToFirebase(data) {
 	console.log(Color.bold('Saving to HVify'));
 	console.dir(data, { colors: true });
 	await request({
-		uri: `https://hvify.com/api/deploy?token=${ARGS.hvify}`,
+		uri: `https://hv.dev/api/deploy?token=${ARGS.hvify}`,
 		body: data,
 		method: 'POST',
 		json: true
