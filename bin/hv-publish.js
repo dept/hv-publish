@@ -52,6 +52,7 @@ let hasInputError = false;
 
 if (ARGS.version) {
 	console.log(`HV Publish Version: ${package.version}`);
+	process.exit();
 }
 if (!ARGS.netlify) {
 	console.log(Color.red('- Missing: netlify or $NETLIFY_ACCESS_TOKEN'));
