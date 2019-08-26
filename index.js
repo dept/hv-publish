@@ -92,12 +92,13 @@ async function deployToNetlify() {
 async function saveToFirebase(data) {
 	console.log(Color.bold('Saving to HVify'));
 	console.dir(data, { colors: true });
-	await request({
+	const result = await request({
 		uri: `https://hv.dev/api/deploy?token=${ARGS.hvify}`,
 		body: data,
 		method: 'POST',
 		json: true
 	});
+	console.log(JSON.stringify(result, null, 2));
 }
 
 // Publish (Main)
