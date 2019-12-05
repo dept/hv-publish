@@ -56,8 +56,6 @@ save2repo --source ./build
 ##### ARGUMENTS
 
 repopath=${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}-build
-source_directory=build
-
 source_directory=./build
 site_name=$BITBUCKET_REPO_SLUG
 git_email="hvdevice@gmail.com" # could be build@hinderlingvolkart.com too
@@ -129,6 +127,7 @@ git config --global user.email $git_email
 git config --global user.name $git_name
 git config http.postBuffer 157286400
 
+touch .rsync-exclude.txt
 echo ".gitignore" >> .rsync-exclude.txt
 echo ".git" >> .rsync-exclude.txt
 rsync -ac ../$source_directory/ . --delete --exclude-from='.rsync-exclude.txt'
