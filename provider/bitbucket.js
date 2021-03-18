@@ -3,6 +3,7 @@ const base64 = require('base-64')
 const fetch = require('node-fetch')
 
 module.exports = {
+	name: 'bitbucket',
 	identify() {
 		return !!env('BITBUCKET_REPO_OWNER')
 	},
@@ -19,16 +20,14 @@ module.exports = {
 	async getRepository(options) {
 		let repoPath = options.path
 
-		log(`Checking availability of bitbucket build repository: ${repoPath}`)
+		log(`Checking availability of bitbucket build repository: ${Color.magenta(repoPath)}`)
 		const repoInfo = await this.getApi(`repositories/${repoPath}`)
-		log(JSON.stringify(repoInfo), 'yellow')
 
 		if (!repoInfo.error) {
 			log(`☑️  Found build repository «${repoInfo.name}»`)
 		} else {
 			log(`➕  Creating new build repository ${repoPath}`)
 			const currentProject = await this.getApi(`repositories/${env('BITBUCKET_REPO_OWNER')}/${env('BITBUCKET_REPO_SLUG')}`)
-			log(`Source project: ${JSON.stringify(currentProject)}`)
 			const newProjectData = {
 				scm: currentProject.scm,
 				is_private: currentProject.is_private,
@@ -41,7 +40,7 @@ module.exports = {
 				method: 'POST',
 				body: JSON.stringify(newProjectData),
 			})
-			log(`New destination project: ${JSON.stringify(newProjectResult)}`)
+			log(`New destination project:\n${JSON.stringify(newProjectResult, null, 2)}`)
 		}
 		return `https://${env('BB_AUTH_STRING')}@bitbucket.org/${repoPath}.git`
 	},

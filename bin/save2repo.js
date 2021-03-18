@@ -6,6 +6,10 @@ const package = require('../package.json')
 const FS = require('fs')
 const Path = require('path')
 const syncDirectories = require('../lib/syncDirectories')
+const exec = require('../lib/exec')
+const request = require('request-promise-native')
+const log = require('../lib/log')
+const { getCommitMessage } = require('../lib/shared')
 
 const providers = [require('../provider/bitbucket'), require('../provider/blank')]
 const provider = providers.find((provider) => provider.identify())
@@ -108,11 +112,18 @@ async function save2repo() {
 	if (!repoUrl) {
 		repoUrl = await provider.getRepository(ARGS)
 	}
+	const output = {
+		origin: `bitbucket/${env('BITBUCKET_REPO_OWNER')}/${env('BITBUCKET_REPO_SLUG')}`,
+		branch: branchName,
+	}
+	let hvPublishOutput
+	try {
+		hvPublishOutput = JSON.parse(FS.readFileSync('.hv-publish.json'))
+	} catch (error) {}
 
 	log(`Destination Repository: ${repoUrl}`)
 
 	const gitLog = await exec(`git log --pretty=format:"%s"`)
-	FS.writeFileSync(Path.join(sourceDirectory, '.gitlog'), gitLog)
 
 	log(`Checking if branch ${branchName} already exists ...`)
 	const branchExists = await exec(`git ls-remote ${repoUrl} refs/*/${branchName}`)
@@ -148,6 +159,7 @@ async function save2repo() {
 		.split(/[\r\n]+/)
 		.filter(Boolean)
 	await syncDirectories(Path.join('..', sourceDirectory), '.', { ignore })
+	FS.writeFileSync('.gitlog', gitLog)
 
 	await exec(`
 		rm -f .rsync-exclude.txt
@@ -156,7 +168,11 @@ async function save2repo() {
 	`)
 
 	// head will limit to max n number of lines
-	const lastCommitMessages = await exec(`git diff --color=never --staged .gitlog | egrep "^\\+[^\\+]" | head -n10`)
+	output.messages = (await exec(`git diff --color=never --staged .gitlog | egrep "^\\+[^\\+]" | head -n10`))
+		.split(/[\n\r]+/)
+		.map((line) => line.replace(/^\+/, '').trim())
+		.filter(Boolean)
+
 	const gitDiff = await (async () => {
 		try {
 			return await exec(`git diff-index HEAD --`)
@@ -168,39 +184,47 @@ async function save2repo() {
 	log(`Git diff: ${gitDiff}`)
 
 	if (gitDiff) {
-		await exec(`git commit -a -m "Build ${buildNumber} -- ${lastCommitMessages || 'No commit messages'}"`)
-		// await exec(`git push origin ${branchName}`)
-		log(`✅  Pushed changes to build repository: Build ${buildNumber} -- ${lastCommitMessages}`)
+		const message = getCommitMessage({
+			...output,
+			...hvPublishOutput,
+		})
+		await exec(`git commit -a -m "${message}"`)
+		output.commit = await exec(`git rev-parse HEAD`)
+		await exec(`git push origin ${branchName}`)
+		log(`✅  Pushed changes to build repository: Build ${buildNumber} -- ${output.messages}`)
 	} else {
 		log(`🆗  No changes to previous build. Nothing to commit.`)
 	}
 
 	process.chdir('../')
-	// remove repository directory
-	//await exec(`rm -rf ${repoDir}`)
-}
 
-function log(msg, color = null) {
-	if (color) {
-		console.log(Color[color](msg))
-	} else {
-		console.log(msg)
-	}
-}
-
-function exec(cmd) {
-	return new Promise((resolve, reject) => {
-		log(`📍${cmd}`, 'gray')
-		require('child_process').exec(cmd, (error, stdout, stderr) => {
-			if (error) {
-				log(Color.red(stderr))
-				reject(error, stderr)
-			} else {
-				log(Color.green(stdout))
-				resolve(stdout)
-			}
+	if (hvPublishOutput) {
+		console.log('Patching hv.dev info')
+		const { messages, ...build_repo } = output
+		const data = {
+			id: hvPublishOutput.key,
+			build_repo,
+		}
+		const result = await request({
+			uri: `https://hv.dev/api/deploy?token=${ARGS.hvify}`,
+			body: data,
+			method: 'PATCH',
+			json: true,
 		})
-	})
+		console.log('Patched hv.dev')
+		console.log('- sent: ', JSON.stringify(data))
+		console.log('- receive: ', JSON.stringify(result))
+		await exec(`rm -rf ${repoDir}`)
+	} else {
+		console.log('Saving .save2repo.json for potential hv-publish followup')
+		FS.writeFileSync('.save2repo.json', JSON.stringify(output))
+	}
+	FS.writeFileSync('.save2repo.json', JSON.stringify(output))
+	// remove repository directory
 }
 
 save2repo().then(() => log('✅  save2repo!'))
+
+function env(key) {
+	return process.env[key]
+}

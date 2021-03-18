@@ -5,7 +5,7 @@ const Color = require('ansi-colors')
 const parseArgs = require('minimist')
 
 const package = require('../package.json')
-const publish = require('../lib/publish.js')
+const publish = require('../lib/publish')
 
 console.log(Color.white.bgBlue.bold('HV Publish'), Color.yellow.bgBlue.bold(`v${package.version}`))
 

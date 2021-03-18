@@ -1,11 +1,12 @@
 module.exports = {
+	name: 'unknown',
 	identify() {
-		return true;
+		return true
 	},
 	getOptions() {
-		return {};
+		return {}
 	},
 	async getRepository(options) {
-		throw new Error('You must provide a valid destination repository.');
-	}
-};
+		throw new Error('You must provide a valid destination repository.')
+	},
+}
