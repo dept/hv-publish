@@ -1,4 +1,7 @@
 /test.sh
 /build
 /test-repo
+/test/.env
+/test/repo
+/test/hv-publish-testbuild
 node_modules
