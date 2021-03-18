@@ -1,9 +1,4 @@
-/test.sh
 /test/*
-/build
-/test-repo
-/test/.env
-/test/repo
-/test/hv-publish-testbuild
+!/test/test.sh
 node_modules
 .DS_Store
