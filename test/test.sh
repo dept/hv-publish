@@ -12,6 +12,8 @@ git clone https://$BB_AUTH_STRING@bitbucket.org/${BITBUCKET_REPO_OWNER}/${BITBUC
 
 # build the test project (changes, deletes, adds some files)
 cd hv-publish-testbuild
+export BITBUCKET_COMMIT=$(git rev-parse HEAD)
+
 node build.js
 
 
