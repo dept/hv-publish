@@ -189,7 +189,7 @@ async function save2repo() {
 			...hvPublishOutput,
 		})
 		await exec(`git commit -a -m "${message}"`)
-		output.commit = await exec(`git rev-parse HEAD`)
+		output.commit = (await exec(`git rev-parse HEAD`)).trim()
 		await exec(`git push origin ${branchName}`)
 		log(`✅  Pushed changes to build repository: Build ${buildNumber} -- ${output.messages}`)
 	} else {
