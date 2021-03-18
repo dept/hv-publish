@@ -137,7 +137,7 @@ async function save2repo() {
 
 	if (branchExists) {
 		log(`- Branch ${branchName} already exists, checking out.`)
-		await exec(`git clone --branch ${branchName} --depth 25 ${repoUrl} .`)
+		await exec(`git clone --branch ${branchName} --depth 10 ${repoUrl} .`)
 	} else {
 		log(`- Branch name ${branchName} doesn't exist yet - will create.`)
 		await exec(`git clone --depth 1 ${repoUrl} .`)
@@ -191,7 +191,7 @@ async function save2repo() {
 		await exec(`git commit -a -m "${message}"`)
 		output.commit = (await exec(`git rev-parse HEAD`)).trim()
 		await exec(`git push origin ${branchName}`)
-		log(`✅  Pushed changes to build repository: Build ${buildNumber} -- ${output.messages}`)
+		log(`✅  Pushed changes to build repository`)
 	} else {
 		log(`🆗  No changes to previous build. Nothing to commit.`)
 	}
@@ -199,21 +199,22 @@ async function save2repo() {
 	process.chdir('../')
 
 	if (hvPublishOutput) {
-		console.log('Patching hv.dev info')
+		log('💉  Patching hv.dev', 'magenta')
 		const { messages, ...build_repo } = output
 		const data = {
 			id: hvPublishOutput.key,
 			build_repo,
 		}
 		const result = await request({
-			uri: `https://hv.dev/api/deploy?token=${ARGS.hvify}`,
+			uri: `https://hv.dev/api/deploy?token=${env('HVIFY_TOKEN')}`,
 			body: data,
 			method: 'PATCH',
 			json: true,
 		})
-		console.log('Patched hv.dev')
-		console.log('- sent: ', JSON.stringify(data))
-		console.log('- receive: ', JSON.stringify(result))
+		console.log('- sent: ')
+		console.dir(data, { colors: true })
+		console.log('- receive: ')
+		console.dir(result, { colors: true })
 		await exec(`rm -rf ${repoDir}`)
 	} else {
 		console.log('Saving .save2repo.json for potential hv-publish followup')

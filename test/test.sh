@@ -17,8 +17,8 @@ export BITBUCKET_COMMIT=$(git rev-parse HEAD)
 node build.js
 
 
-# save2repo
-../../bin/save2repo.js
-
 # hv-publish
 ../../bin/hv-publish.js
+
+# save2repo
+../../bin/save2repo.js
