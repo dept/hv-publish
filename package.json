@@ -7,14 +7,15 @@
   "license": "MIT",
   "dependencies": {
     "ansi-colors": "^4.1.1",
-    "base-64": "^0.1.0",
+    "base-64": "^1.0.0",
+    "fs-extra": "^9.1.0",
+    "is-absolute": "^1.0.0",
     "minimist": "^1.2.5",
     "netlify": "^6.1.16",
-    "recursive-readdir": "^2.2.2",
     "node-fetch": "^2.6.0",
+    "readdir-enhanced": "^6.0.4",
     "request": "^2.88.2",
-    "request-promise-native": "^1.0.9",
-    "sync-directory": "^2.2.17"
+    "request-promise-native": "^1.0.9"
   },
   "scripts": {
     "deploy": "node index.js"

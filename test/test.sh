@@ -18,7 +18,7 @@ node build.js
 
 
 # save2repo
-../../bin/save2repo
+../../bin/save2repo.js
 
 # hv-publish
-../../bin/hv-publish.js
+# ../../bin/hv-publish.js

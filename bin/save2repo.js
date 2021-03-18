@@ -1,15 +1,16 @@
 #!/usr/bin/env node
 
-const Color = require('ansi-colors');
-const parseArgs = require('minimist');
-const package = require('../package.json');
-const FS = require('fs');
-const Path = require('path');
+const Color = require('ansi-colors')
+const parseArgs = require('minimist')
+const package = require('../package.json')
+const FS = require('fs')
+const Path = require('path')
+const syncDirectories = require('../lib/syncDirectories')
 
-const providers = [require('../provider/bitbucket'), require('../provider/blank')];
-const provider = providers.find(provider => provider.identify());
+const providers = [require('../provider/bitbucket'), require('../provider/blank')]
+const provider = providers.find((provider) => provider.identify())
 
-console.log(Color.white.bgBlue.bold('HV Save2Repo'), Color.yellow.bgBlue.bold(`v${package.version}`));
+console.log(Color.white.bgBlue.bold('HV Save2Repo'), Color.yellow.bgBlue.bold(`v${package.version}`))
 
 // Parsing Arguments
 // =================
@@ -24,7 +25,7 @@ const ARGS = Object.assign(
 		git_name: 'HV Build',
 		number: null,
 		help: null,
-		version: null
+		version: null,
 	},
 	provider.getOptions(),
 	parseArgs(process.argv, {
@@ -34,16 +35,16 @@ const ARGS = Object.assign(
 			d: 'destination',
 			p: 'path',
 			h: 'help',
-			v: 'version'
-		}
+			v: 'version',
+		},
 	})
-);
+)
 
-let hasInputError = false;
+let hasInputError = false
 
 if (ARGS.version) {
-	log(`HV Publish Version: ${package.version}`);
-	process.exit();
+	log(`save2repo version: ${package.version}`)
+	process.exit()
 }
 if (ARGS.help) {
 	log(`
@@ -75,59 +76,62 @@ save2repo --source ./build
 -h | --help
 
     Prints this help.
-`);
-	hasInputError = true;
+`)
+	hasInputError = true
 }
 if (!ARGS.source) {
-	log('- Missing: source', 'red');
-	hasInputError = true;
+	log('- Missing: source', 'red')
+	hasInputError = true
 }
 if (!ARGS.branch) {
-	log('- Missing: branch or $BITBUCKET_BRANCH', 'red');
-	hasInputError = true;
+	log('- Missing: branch or $BITBUCKET_BRANCH', 'red')
+	hasInputError = true
 }
 if (!ARGS.path && !ARGS.destination) {
-	log('- Missing: destination or $BITBUCKET_REPO_OWNER/$BITBUCKET_REPO_SLUG', 'red');
-	hasInputError = true;
+	log('- Missing: destination or $BITBUCKET_REPO_OWNER/$BITBUCKET_REPO_SLUG', 'red')
+	hasInputError = true
 }
 if (hasInputError) {
-	console.dir(ARGS, { colors: true });
-	process.exit();
+	console.dir(ARGS, { colors: true })
+	process.exit()
 }
 
-let repoUrl = ARGS.destination;
-let sourceDirectory = ARGS.source;
-let branchName = ARGS.branch;
-let buildNumber = ARGS.number;
-let gitEmail = ARGS.git_email;
-let gitName = ARGS.git_name;
-const repoDir = '__repo__';
+let repoUrl = ARGS.destination
+let sourceDirectory = ARGS.source
+let branchName = ARGS.branch
+let buildNumber = ARGS.number
+let gitEmail = ARGS.git_email
+let gitName = ARGS.git_name
+const repoDir = '__repo__'
 
 async function save2repo() {
 	if (!repoUrl) {
-		repoUrl = await provider.getRepository(ARGS);
+		repoUrl = await provider.getRepository(ARGS)
 	}
 
-	log(`Our destination repository: ${repoUrl}`);
+	log(`Destination Repository: ${repoUrl}`)
 
-	const gitLog = await exec(`git log --pretty=format:"%s"`);
-	FS.writeFileSync(Path.join(sourceDirectory, '.gitlog'), gitLog);
+	const gitLog = await exec(`git log --pretty=format:"%s"`)
+	FS.writeFileSync(Path.join(sourceDirectory, '.gitlog'), gitLog)
 
-	log(`Checking if branch ${branchName} already exists ...`);
-	const branchExists = await exec(`git ls-remote ${repoUrl} refs/*/${branchName}`);
+	log(`Checking if branch ${branchName} already exists ...`)
+	const branchExists = await exec(`git ls-remote ${repoUrl} refs/*/${branchName}`)
+	log(`→  Branch exists: ${branchExists}`)
 
 	// create repository directory
-	await exec(`mkdir ${repoDir};`);
-	process.chdir(repoDir);
+	await exec(`mkdir ${repoDir};`)
+	process.chdir(repoDir)
+
+	await exec(`echo $\{PWD##*/}`)
 
 	if (branchExists) {
-		log(`- Branch ${branchName} already exists, checking out.`);
-		await exec(`git clone --branch ${branchName} --depth 25 ${repoUrl} .`);
+		log(`- Branch ${branchName} already exists, checking out.`)
+		await exec(`git clone --branch ${branchName} --depth 25 ${repoUrl} .`)
 	} else {
-		log(`- Branch name ${branchName} doesn't exist yet - will create.`);
-		await exec(`git clone --depth 1 ${repoUrl} .`);
-		await exec(`git checkout --orphan ${branchName}`);
-		await exec(`git rm -rfq --ignore-unmatch .`);
+		log(`- Branch name ${branchName} doesn't exist yet - will create.`)
+		await exec(`git clone --depth 1 ${repoUrl} .`)
+		await exec(`git checkout --orphan ${branchName}`)
+		await exec(`git rm -rfq --ignore-unmatch .`)
 	}
 
 	await exec(`
@@ -137,56 +141,66 @@ async function save2repo() {
 		touch .rsync-exclude.txt
 		echo ".gitignore" >> .rsync-exclude.txt
 		echo ".git" >> .rsync-exclude.txt
-		rsync -ac ../${sourceDirectory}/ . --delete --exclude-from='.rsync-exclude.txt'
+	`)
+
+	const ignore = FS.readFileSync('.rsync-exclude.txt')
+		.toString()
+		.split(/[\r\n]+/)
+		.filter(Boolean)
+	await syncDirectories(Path.join('..', sourceDirectory), '.', { ignore })
+
+	await exec(`
 		rm -f .rsync-exclude.txt
 		git add -u
 		git add -A .
-	`);
+	`)
 
 	// head will limit to max n number of lines
-	const lastCommitMessages = await exec(`git diff --color=never --staged .gitlog | egrep "^\\+[^\\+]" | head -n10`);
-	const gitDiff = (async () => {
+	const lastCommitMessages = await exec(`git diff --color=never --staged .gitlog | egrep "^\\+[^\\+]" | head -n10`)
+	const gitDiff = await (async () => {
 		try {
-			return await exec(`git diff-index HEAD --`);
+			return await exec(`git diff-index HEAD --`)
 		} catch (error) {
-			return true;
+			return true
 		}
-	})();
+	})()
+
+	log(`Git diff: ${gitDiff}`)
 
 	if (gitDiff) {
-		await exec(`git commit -a -m "Build ${buildNumber} -- ${lastCommitMessages}"`);
-		await exec(`git push origin $branch_name`);
-		log(`✅  Pushed changes to build repository: Build ${buildNumber} -- ${lastCommitMessages}`);
+		await exec(`git commit -a -m "Build ${buildNumber} -- ${lastCommitMessages || 'No commit messages'}"`)
+		// await exec(`git push origin ${branchName}`)
+		log(`✅  Pushed changes to build repository: Build ${buildNumber} -- ${lastCommitMessages}`)
 	} else {
-		log(`🆗  No changes to previous build. Nothing to commit.`);
+		log(`🆗  No changes to previous build. Nothing to commit.`)
 	}
 
+	process.chdir('../')
 	// remove repository directory
-	process.chdir('../');
-	await exec(`rm -rf ${repoDir}`);
+	//await exec(`rm -rf ${repoDir}`)
 }
 
 function log(msg, color = null) {
 	if (color) {
-		console.log(Color[color](msg));
+		console.log(Color[color](msg))
 	} else {
-		console.log(msg);
+		console.log(msg)
 	}
 }
 
 function exec(cmd) {
 	return new Promise((resolve, reject) => {
-		log(`📍${cmd}`, 'gray');
+		log(`📍${cmd}`, 'gray')
 		require('child_process').exec(cmd, (error, stdout, stderr) => {
 			if (error) {
-				log(Color.red(stderr));
-				reject(error, stderr);
+				log(Color.red(stderr))
+				reject(error, stderr)
 			} else {
-				log(Color.green(stdout));
-				resolve(stdout);
+				log(Color.green(stdout))
+				resolve(stdout)
 			}
-		});
-	});
+		})
+	})
 }
 
-save2repo().then(() => log('Done!'));
+save2repo().then(() => log('✅  save2repo!'))
