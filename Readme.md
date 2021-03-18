@@ -4,10 +4,12 @@ HV Publish
 Within bitbucket pipelines:
 
 ```
+yarn run build # build your site
 npm install -g hv-publish
+save2repo
 hv-publish
 ```
-
+Under the assumption of the build directory being at `./build`.
 
 ## Combination Strategy (`hv-publish` and `save2repo`)
 

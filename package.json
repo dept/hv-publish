@@ -1,6 +1,6 @@
 {
-  "name": "hv-publish",
-  "version": "1.0.6",
+  "name": "@hv/publish",
+  "version": "2.0.0",
   "description": "Publish static website to Hinderling Volkart Frontend Development Site",
   "main": "index.js",
   "author": "Severin Klaus <sk@hinderlingvolkart.com>",
@@ -22,6 +22,6 @@
   },
   "bin": {
     "hv-publish": "./bin/hv-publish.js",
-    "save2repo": "./bin/save2repo"
+    "save2repo": "./bin/save2repo.js"
   }
 }
