@@ -112,10 +112,12 @@ async function save2repo() {
 	if (!repoUrl) {
 		repoUrl = await provider.getRepository(ARGS)
 	}
+
 	const output = {
-		origin: `bitbucket/${env('BITBUCKET_REPO_OWNER')}/${env('BITBUCKET_REPO_SLUG')}`,
 		branch: branchName,
+		origin: repoUrl.replace(/(https?:\/\/)[^\/]+@/, '$1'), // remove authentication
 	}
+
 	let hvPublishOutput
 	try {
 		hvPublishOutput = JSON.parse(FS.readFileSync('.hv-publish.json'))
