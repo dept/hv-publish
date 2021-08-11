@@ -7,15 +7,14 @@
   "license": "MIT",
   "dependencies": {
     "ansi-colors": "^4.1.1",
+    "axios": "^0.21.1",
     "base-64": "^1.0.0",
     "fs-extra": "^9.1.0",
     "is-absolute": "^1.0.0",
     "minimist": "^1.2.5",
     "netlify": "^6.1.16",
     "node-fetch": "^2.6.0",
-    "readdir-enhanced": "^6.0.4",
-    "request": "^2.88.2",
-    "request-promise-native": "^1.0.9"
+    "readdir-enhanced": "^6.0.4"
   },
   "scripts": {
     "version": "npm version patch",

@@ -7,7 +7,7 @@ const FS = require('fs')
 const Path = require('path')
 const syncDirectories = require('../lib/syncDirectories')
 const exec = require('../lib/exec')
-const request = require('request-promise-native')
+const axios = require('axios')
 const log = require('../lib/log')
 const { getCommitMessage } = require('../lib/shared')
 
@@ -207,12 +207,14 @@ async function save2repo() {
 			id: hvPublishOutput.key,
 			build_repo,
 		}
-		const result = await request({
-			uri: `https://hv.dev/api/deploy?token=${env('HVIFY_TOKEN')}`,
-			body: data,
-			method: 'PATCH',
-			json: true,
-		})
+		const result = (
+			await axios({
+				url: `https://hv.dev/api/deploy?token=${env('HVIFY_TOKEN')}`,
+				data,
+				method: 'PATCH',
+				responseType: 'json',
+			})
+		).data
 		console.log('- sent: ')
 		console.dir(data, { colors: true })
 		console.log('- receive: ')
