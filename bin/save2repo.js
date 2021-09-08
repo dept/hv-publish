@@ -204,7 +204,7 @@ async function save2repo() {
 		log(`✅  Pushed changes to build repository`)
 		
 		if (tag) {
-			if (typeof tag === 'boolean' && hvPublishOutput?.deploy?.index) {
+			if (typeof tag === 'boolean' && hvPublishOutput && hvPublishOutput.deploy && hvPublishOutput.deploy.index) {
 				tag = `v${hvPublishOutput.deploy.index}`;
 			}
 
