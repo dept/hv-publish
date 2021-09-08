@@ -204,13 +204,17 @@ async function save2repo() {
 		log(`✅  Pushed changes to build repository`)
 		
 		if (tag) {
-			if (typeof tag === 'boolean') {
-				tag = `v${package.version}`;
+			if (typeof tag === 'boolean' && hvPublishOutput?.deploy?.index) {
+				tag = `v${hvPublishOutput.deploy.index}`;
 			}
 
-			await exec(`git tag ${tag}`)
-			await exec(`git push origin ${tag}`)
-			log(`✅  Pushed tag ${tag} to build repository`)
+			if (typeof tag === 'string') {
+				await exec(`git tag ${tag}`)
+				await exec(`git push origin ${tag}`)
+				log(`✅  Pushed tag ${tag} to build repository`)
+			} else {
+				output.tag = tag;
+			}
 		}
 
 	} else {
