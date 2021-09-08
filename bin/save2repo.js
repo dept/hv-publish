@@ -30,7 +30,7 @@ const ARGS = Object.assign(
 		number: null,
 		help: null,
 		version: null,
-		tag_version: false
+		tag: false
 	},
 	provider.getOptions(),
 	parseArgs(process.argv, {
@@ -41,7 +41,7 @@ const ARGS = Object.assign(
 			p: 'path',
 			h: 'help',
 			v: 'version',
-			t: 'tag_version'
+			t: 'tag'
 		},
 	})
 )
@@ -79,9 +79,9 @@ save2repo --source ./build
 
     The destination branch
 
--t | --tag_version true | branch
+-t | --tag tag
 
-    Add version tag to a branch. true => all branches / 'release/*' => all release branches (regex).
+    Add tag to a branch. Default is the current version number (e.g. v1.2.45)
 
 -h | --help
 
@@ -112,7 +112,7 @@ let branchName = ARGS.branch
 let buildNumber = ARGS.number
 let gitEmail = ARGS.git_email
 let gitName = ARGS.git_name
-let tagVersion = ARGS.tag_version
+let tag = ARGS.tag
 
 const repoDir = '__repo__'
 
@@ -203,23 +203,15 @@ async function save2repo() {
 		await exec(`git push origin ${branchName}`)
 		log(`✅  Pushed changes to build repository`)
 		
-		if(tagVersion) {
-			let tagBranch = true;
-
-			if(typeof tagVersion === 'string' && tagVersion.length > 0) {
-				const regex = new RegExp(tagVersion, 'g');
-				tagBranch = regex.test(branchName);
+		if (tag) {
+			if (typeof tag === 'boolean') {
+				tag = `v${package.version}`;
 			}
 
-			if(tagBranch) {
-				const tag = `v${package.version}`;
-				await exec(`git tag ${tag}`)
-				await exec(`git push origin ${tag}`)
-				log(`✅  Pushed tag ${tag} to build repository`)
-			}
+			await exec(`git tag ${tag}`)
+			await exec(`git push origin ${tag}`)
+			log(`✅  Pushed tag ${tag} to build repository`)
 		}
-
-
 
 	} else {
 		log(`🆗  No changes to previous build. Nothing to commit.`)
