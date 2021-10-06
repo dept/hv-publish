@@ -30,6 +30,7 @@ const ARGS = Object.assign(
 		number: null,
 		help: null,
 		version: null,
+		tag: false,
 	},
 	provider.getOptions(),
 	parseArgs(process.argv, {
@@ -40,6 +41,7 @@ const ARGS = Object.assign(
 			p: 'path',
 			h: 'help',
 			v: 'version',
+			t: 'tag',
 		},
 	})
 )
@@ -77,6 +79,10 @@ save2repo --source ./build
 
     The destination branch
 
+-t | --tag tag
+
+    Add tag to a branch. Default is the current version number (e.g. v1.2.45)
+
 -h | --help
 
     Prints this help.
@@ -106,6 +112,8 @@ let branchName = ARGS.branch
 let buildNumber = ARGS.number
 let gitEmail = ARGS.git_email
 let gitName = ARGS.git_name
+let tag = ARGS.tag
+
 const repoDir = '__repo__'
 
 async function save2repo() {
@@ -194,6 +202,20 @@ async function save2repo() {
 		output.commit = (await exec(`git rev-parse HEAD`)).trim()
 		await exec(`git push origin ${branchName}`)
 		log(`✅  Pushed changes to build repository`)
+
+		if (tag) {
+			if (typeof tag === 'boolean' && hvPublishOutput && hvPublishOutput.deploy && hvPublishOutput.deploy.index) {
+				tag = `v${hvPublishOutput.deploy.index}`
+			}
+
+			if (typeof tag === 'string') {
+				await exec(`git tag ${tag}`)
+				await exec(`git push origin ${tag}`)
+				log(`✅  Pushed tag ${tag} to build repository`)
+			} else {
+				output.tag = tag
+			}
+		}
 	} else {
 		log(`🆗  No changes to previous build. Nothing to commit.`)
 	}
