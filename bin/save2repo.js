@@ -30,7 +30,7 @@ const ARGS = Object.assign(
 		number: null,
 		help: null,
 		version: null,
-		tag: false
+		tag: false,
 	},
 	provider.getOptions(),
 	parseArgs(process.argv, {
@@ -41,7 +41,7 @@ const ARGS = Object.assign(
 			p: 'path',
 			h: 'help',
 			v: 'version',
-			t: 'tag'
+			t: 'tag',
 		},
 	})
 )
@@ -202,10 +202,10 @@ async function save2repo() {
 		output.commit = (await exec(`git rev-parse HEAD`)).trim()
 		await exec(`git push origin ${branchName}`)
 		log(`✅  Pushed changes to build repository`)
-		
+
 		if (tag) {
 			if (typeof tag === 'boolean' && hvPublishOutput && hvPublishOutput.deploy && hvPublishOutput.deploy.index) {
-				tag = `v${hvPublishOutput.deploy.index}`;
+				tag = `v${hvPublishOutput.deploy.index}`
 			}
 
 			if (typeof tag === 'string') {
@@ -213,10 +213,9 @@ async function save2repo() {
 				await exec(`git push origin ${tag}`)
 				log(`✅  Pushed tag ${tag} to build repository`)
 			} else {
-				output.tag = tag;
+				output.tag = tag
 			}
 		}
-
 	} else {
 		log(`🆗  No changes to previous build. Nothing to commit.`)
 	}
