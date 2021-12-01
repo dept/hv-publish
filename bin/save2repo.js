@@ -177,11 +177,45 @@ async function save2repo() {
 		git add -A .
 	`)
 
-	// head will limit to max n number of lines
-	output.messages = (await exec(`git diff --color=never --staged .gitlog | egrep "^\\+[^\\+]" | head -n10`))
-		.split(/[\n\r]+/)
-		.map((line) => line.replace(/^\+/, '').trim())
-		.filter(Boolean)
+	// find new commit messages
+	{
+		const gitdiff = await exec(`git diff --color=never --staged .gitlog`)
+		const added = []
+		const removed = []
+		gitdiff.split(/[\n\r]+/).forEach((line) => {
+			const message = line.substring(1).trim()
+			if (line.startsWith('+') && !line.startsWith('++')) {
+				return added.push(message)
+			}
+			if (line.startsWith('-') && !line.startsWith('--')) {
+				return removed.push(message)
+			}
+		})
+		/*
+		we don't want to include added lines that were removed
+		because such lines are bad diff (just moved line basically).
+		The diff on bitbucket would sometimes look like this:
+
+			index 0434c27..55c6852 100644
+			--- a/.gitlog
+			+++ b/.gitlog
+			@@ -1,3 +1,4 @@
+			+feat. improve icongroup, refs. ASAL-568
+			feat: remove text5 from body1, refs. ASAL-550
+			feat: improve jobblock replace, refs. ASAL-557
+			feat: update page generation, refs. ASAL-566
+			@@ -47,4 +48,3 @@ feat: add job data job, refs. ASAL-540
+			Brings back weather
+			Work around missing pdf download in download list(happens with draft data aka preview)
+			-ASAL-526 Fix press release link header alignment
+			-ASAL-526 Add shorter press release link list(as type variant)
+			green
+			+ASAL-526 Fix press release link header alignment
+		
+		Which of course is slightly stupid by the diff algorithm. But who are we to judge?
+		*/
+		output.messages = added.filter((message) => !removed.includes(message))
+	}
 
 	const gitDiff = await (async () => {
 		try {

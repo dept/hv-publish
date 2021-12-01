@@ -1,38 +1,38 @@
 {
-  "name": "@hv/publish",
-  "version": "2.0.9",
-  "description": "Publish static website to Hinderling Volkart Frontend Development Site",
-  "main": "index.js",
-  "author": "Severin Klaus <sk@hinderlingvolkart.com>",
-  "license": "MIT",
-  "dependencies": {
-    "ansi-colors": "^4.1.1",
-    "axios": "^0.21.1",
-    "base-64": "^1.0.0",
-    "fs-extra": "^9.1.0",
-    "is-absolute": "^1.0.0",
-    "minimist": "^1.2.5",
-    "netlify": "^6.1.16",
-    "node-fetch": "^2.6.0",
-    "readdir-enhanced": "^6.0.4"
-  },
-  "scripts": {
-    "version": "npm version patch",
-    "patch": "npm version patch",
-    "deploy": "npm publish --access public"
-  },
-  "bin": {
-    "hv-publish": "bin/hv-publish.js",
-    "save2repo": "bin/save2repo.js"
-  },
-  "directories": {
-    "lib": "lib",
-    "test": "test"
-  },
-  "devDependencies": {},
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@bitbucket.org/hinderlingvolkart/hv-publish.git"
-  },
-  "homepage": "https://bitbucket.org/hinderlingvolkart/hv-publish#readme"
+	"name": "@hv/publish",
+	"version": "2.0.10",
+	"description": "Publish static website to Hinderling Volkart Frontend Development Site",
+	"main": "index.js",
+	"author": "Severin Klaus <sk@hinderlingvolkart.com>",
+	"license": "MIT",
+	"dependencies": {
+		"ansi-colors": "^4.1.1",
+		"axios": "^0.21.1",
+		"base-64": "^1.0.0",
+		"fs-extra": "^9.1.0",
+		"is-absolute": "^1.0.0",
+		"minimist": "^1.2.5",
+		"netlify": "^6.1.16",
+		"node-fetch": "^2.6.0",
+		"readdir-enhanced": "^6.0.4"
+	},
+	"scripts": {
+		"version": "npm version patch",
+		"patch": "npm version patch",
+		"deploy": "npm publish --access public"
+	},
+	"bin": {
+		"hv-publish": "bin/hv-publish.js",
+		"save2repo": "bin/save2repo.js"
+	},
+	"directories": {
+		"lib": "lib",
+		"test": "test"
+	},
+	"devDependencies": {},
+	"repository": {
+		"type": "git",
+		"url": "git+ssh://git@bitbucket.org/hinderlingvolkart/hv-publish.git"
+	},
+	"homepage": "https://bitbucket.org/hinderlingvolkart/hv-publish#readme"
 }
