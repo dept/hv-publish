@@ -129,7 +129,7 @@ async function save2repo() {
 	let hvPublishOutput
 	try {
 		hvPublishOutput = JSON.parse(FS.readFileSync('.hv-publish.json'))
-	} catch (error) {}
+	} catch (error) { }
 
 	log(`Destination Repository: ${repoUrl}`)
 
@@ -257,7 +257,7 @@ async function save2repo() {
 	process.chdir('../')
 
 	if (hvPublishOutput) {
-		log('💉  Patching hv.dev', 'magenta')
+		log('💉  Patching dept.dev', 'magenta')
 		const { messages, ...build_repo } = output
 		const data = {
 			id: hvPublishOutput.key,
@@ -265,7 +265,7 @@ async function save2repo() {
 		}
 		const result = (
 			await axios({
-				url: `https://hv.dev/api/deploy?token=${env('HVIFY_TOKEN')}`,
+				url: `https://dept.dev/api/deploy?token=${env('HVIFY_TOKEN')}`,
 				data,
 				method: 'PATCH',
 				responseType: 'json',
