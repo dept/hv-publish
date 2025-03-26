@@ -6,6 +6,8 @@ const getCommitInfo = require('../lib/getCommitInfo')
 const { getCommitMessage } = require('../lib/shared')
 const exec = require('./exec')
 const base64 = require('base-64')
+const deployToNetlify = require('./publish/netlify')
+const deployToCloudflare = require('./publish/cloudflare')
 
 let commit, ARGS
 
@@ -169,7 +171,26 @@ async function saveToHvify(data) {
 async function publish(args) {
 	ARGS = args
 	commit = await getCommitInfo(ARGS.commit, ARGS.branch)
-	const deploy_url = await deployToNetlify()
+
+	let deploy_url
+
+	// Determine which platform to deploy to
+	if (ARGS.platform === 'cloudflare') {
+		deploy_url = await deployToCloudflare({
+			accountId: ARGS.cloudflareAccountId,
+			projectName: ARGS.sitename,
+			source: ARGS.source,
+			apiToken: ARGS.cloudflareToken,
+			branch: ARGS.branch,
+			commit
+		})
+	} else {
+		// Default to Netlify
+		deploy_url = await deployToNetlify({
+			...ARGS,
+			commit
+		})
+	}
 
 	return saveToHvify({
 		url: deploy_url,
@@ -183,8 +204,6 @@ async function publish(args) {
 }
 
 module.exports = publish
-
-
 
 async function setBitbucketStatus(name, url, key = "build") {
 	const MANDATORY_ENV_VARS = ["BITBUCKET_BRANCH", "BB_AUTH_STRING", "BITBUCKET_REPO_OWNER", "BITBUCKET_REPO_SLUG"]
