@@ -1,9 +1,9 @@
 import log from './log';
 
-export function exec(cmd: string): Promise<string> {
+export function exec(cmd: string, options: { cwd?: string } = {}): Promise<string> {
    return new Promise((resolve, reject) => {
       log(addSpaceToBeginning(trimLines(cmd)).replace(' ', '►'), 'gray')
-      require('child_process').exec(cmd, (error: Error | null, stdout: string, stderr: string) => {
+      require('child_process').exec(cmd, options, (error: Error | null, stdout: string, stderr: string) => {
          if (error) {
             log(addSpaceToBeginning(stderr), 'red')
             reject(error)

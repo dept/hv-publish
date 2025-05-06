@@ -1,7 +1,7 @@
 import Color from 'ansi-colors';
 import base64 from 'base-64';
 import fetch, { type RequestInit } from 'node-fetch';
-import log from '../lib/log';
+import log from '../lib/util/log';
 import { Provider, ProviderOptions, RepositoryInfo } from './types';
 
 const provider: Provider = {

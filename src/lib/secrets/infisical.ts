@@ -1,5 +1,5 @@
-import type { ISecretBundle } from 'infisical-node/lib/types/models'
 import fetch from 'node-fetch'
+import Color from 'ansi-colors';
 
 export async function loadSecrets(token: string | undefined = process.env.INFISICAL_TOKEN) {
    if (!token) {
@@ -29,7 +29,11 @@ export async function loadSecrets(token: string | undefined = process.env.INFISI
  * Load secrets from Infisical and apply them to process.env without overwriting existing values
  */
 export async function loadAndApplySecrets(token?: string | undefined) {
-   const secrets = await loadSecrets(token || process.env.INFISICAL_TOKEN)
+   const finalToken = token || process.env.INFISICAL_TOKEN || process.env.HVPUBLISH_SECRETS || process.env.DACH_HVPUBLISH_SECRETS
+   if (!finalToken) {
+      console.log(Color.gray("Not using infisical secrets ... (no token provided, e.g. INFISICAL_TOKEN)"))
+   }
+   const secrets = await loadSecrets(finalToken)
 
    // Apply secrets to process.env without overwriting existing values
    for (const [key, value] of Object.entries(secrets)) {

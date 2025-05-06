@@ -1,4 +1,4 @@
-import { exec } from './exec';
+import { gitExec } from './util/gitExec';
 
 interface CommitAuthor {
    name: string;
@@ -16,8 +16,12 @@ interface CommitInfo {
 export async function getCommitInfo(commit: string, branch: string): Promise<CommitInfo> {
    // TODO: JSON is invalid when subject contains double quote – let's save as simple lines and read from there
    const DELIMITER = '--*--';
-   const cmd = `git log --pretty=format:'%H${DELIMITER}%s${DELIMITER}%aI${DELIMITER}%aN${DELIMITER}%aE' -n 1 ${commit}`;
-   const output = await exec(cmd);
+   const output = await gitExec([
+      'log',
+      `--pretty=format:%H${DELIMITER}%s${DELIMITER}%aI${DELIMITER}%aN${DELIMITER}%aE`,
+      '-n', '1',
+      commit
+   ]);
    console.log(output);
    const outputItems = output.split(DELIMITER);
 

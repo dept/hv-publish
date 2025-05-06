@@ -1,6 +1,6 @@
 import Color from 'ansi-colors';
 import fetch, { type RequestInit } from 'node-fetch';
-import log from '../lib/log';
+import log from '../lib/util/log';
 import { Provider, ProviderOptions } from './types';
 
 const provider: Provider = {
@@ -72,6 +72,48 @@ async function getJSON(url: string, options: RequestInit = {}): Promise<any> {
 
 function env(key: string): string | undefined {
    return process.env[key];
+}
+
+export async function setGithubStatus({
+   state,
+   description,
+   context,
+   target_url,
+   sha,
+   repo,
+   owner,
+   github_token,
+}: {
+   state: 'error' | 'failure' | 'pending' | 'success',
+   description: string,
+   context: string,
+   target_url?: string,
+   sha: string,
+   repo: string,
+   owner: string,
+   github_token: string,
+}) {
+   const url = `https://api.github.com/repos/${owner}/${repo}/statuses/${sha}`
+   const body = {
+      state,
+      description,
+      context,
+      ...(target_url ? { target_url } : {}),
+   }
+   const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+         'Authorization': `Bearer ${github_token}`,
+         'Accept': 'application/vnd.github+json',
+         'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+   })
+   if (!response.ok) {
+      const error = await response.text()
+      throw new Error(`Failed to set GitHub status: ${error}`)
+   }
+   console.log(`✅ GitHub commit status «${context}» set`)
 }
 
 export default provider; 

@@ -1,4 +1,4 @@
-import { exec } from '../exec'
+import { exec } from '../util/exec'
 import Color from 'ansi-colors'
 
 interface CloudflareDeploymentArgs {

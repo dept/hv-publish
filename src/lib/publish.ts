@@ -3,10 +3,10 @@ import * as FS from 'fs'
 import base64 from 'base-64'
 import { getCommitInfo } from './getCommitInfo'
 import { getCommitMessage } from './shared'
-import { exec } from './exec'
 import deployToNetlify from './publish/netlify'
 import deployToCloudflare from './publish/cloudflare'
 import fetch from 'node-fetch'
+import { gitExec } from './util/gitExec'
 
 interface CommitAuthor {
 	name: string;
@@ -77,17 +77,18 @@ async function saveToHvify(data: HvifyData) {
 	})
 	const result = await response.json()
 
-	// if we are on bitbucket, save part of result to commit
-	await setBitbucketStatus(
-		`dept.dev v${result.deploy.index} for ${process.env.BITBUCKET_BRANCH} of ${process.env.BITBUCKET_REPO_SLUG}`,
-		`https://${result.deploy.project}-v${result.deploy.index}.dept.dev`,
-		"dev"
-	)
-	await setBitbucketStatus(
-		`dept.dev (raw) v${result.deploy.index} for ${process.env.BITBUCKET_BRANCH} of ${process.env.BITBUCKET_REPO_SLUG}`,
-		result.deploy.url,
-		"raw"
-	)
+	if (process.env.GITHUB_TOKEN) {
+		await setGithubStatus({
+			state: 'success',
+			description: 'Deploy to dept.dev succeeded',
+			context: 'dept.dev',
+			target_url: data.url,
+			sha: process.env.GITHUB_SHA!,
+			repo: process.env.GITHUB_REPOSITORY!.split('/')[1],
+			owner: process.env.GITHUB_REPOSITORY!.split('/')[0],
+			github_token: process.env.GITHUB_TOKEN,
+		})
+	}
 
 	console.log('⬇   ⬇   ⬇   ⬇   ⬇   ⬇   ⬇   ⬇')
 	console.dir(result, { colors: true })
@@ -102,8 +103,8 @@ async function saveToHvify(data: HvifyData) {
 		})
 		try {
 			process.chdir('__repo__')
-			await exec(`git commit --amend -m "${message}"`)
-			await exec(`git push --force origin ${save2repoOutput.branch}`)
+			await gitExec(['commit', '--amend', '-m', message])
+			await gitExec(['push', '--force', 'origin', save2repoOutput.branch])
 			process.chdir('..')
 		} catch (error) {
 			console.log(Color.red(`Could not update build commit: ${error}`))
@@ -119,8 +120,8 @@ async function saveToHvify(data: HvifyData) {
 			if (typeof tag === 'string') {
 				try {
 					process.chdir('__repo__')
-					await exec(`git tag ${tag}`)
-					await exec(`git push origin ${tag}`)
+					await gitExec(['tag', tag])
+					await gitExec(['push', 'origin', tag])
 					process.chdir('..')
 				} catch (error) {
 					console.log(Color.red(`Could not update tag: ${error}`))
@@ -137,6 +138,12 @@ async function saveToHvify(data: HvifyData) {
 
 async function publish(args: PublishArgs) {
 	ARGS = args
+
+	// check first if there is a build directory
+	if (!FS.existsSync(ARGS.source)) {
+		throw new Error(`Build directory "${ARGS.source}" does not exist`)
+	}
+
 	commit = await getCommitInfo(ARGS.commit, ARGS.branch)
 
 	let deploy_url: string
@@ -205,6 +212,48 @@ async function setBitbucketStatus(name: string, url: string, key = "build") {
 	} else {
 		console.log(`ℹ️  Not setting bitbucket commit status: missing environment variables: ${MANDATORY_ENV_VARS.filter(key => !process.env[key]).join(", ")}`)
 	}
+}
+
+async function setGithubStatus({
+	state,
+	description,
+	context,
+	target_url,
+	sha,
+	repo,
+	owner,
+	github_token,
+}: {
+	state: 'error' | 'failure' | 'pending' | 'success',
+	description: string,
+	context: string,
+	target_url?: string,
+	sha: string,
+	repo: string,
+	owner: string,
+	github_token: string,
+}) {
+	const url = `https://api.github.com/repos/${owner}/${repo}/statuses/${sha}`
+	const body = {
+		state,
+		description,
+		context,
+		...(target_url ? { target_url } : {}),
+	}
+	const response = await fetch(url, {
+		method: 'POST',
+		headers: {
+			'Authorization': `Bearer ${github_token}`,
+			'Accept': 'application/vnd.github+json',
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify(body),
+	})
+	if (!response.ok) {
+		const error = await response.text()
+		throw new Error(`Failed to set GitHub status: ${error}`)
+	}
+	console.log(`✅ GitHub commit status «${context}» set`)
 }
 
 export { publish }

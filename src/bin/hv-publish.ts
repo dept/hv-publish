@@ -24,7 +24,7 @@ interface PublishArgs {
 }
 
 async function main() {
-   console.log(Color.white.bgGreen.bold('HV Publish'), Color.yellow.bgGreen.bold(`v${version}`))
+   console.log(Color.white.bgBlue.bold('HV Publish'), Color.yellow.bgBlue.bold(`v${version}`))
 
    // Load secrets from Infisical and apply to process.env
    await loadAndApplySecrets()
@@ -38,7 +38,7 @@ async function main() {
          commit: process.env.BITBUCKET_COMMIT || process.env.GITHUB_SHA || '',
          branch: process.env.BITBUCKET_BRANCH || process.env.GITHUB_REF_NAME || '',
          source: './build',
-         project: process.env.BITBUCKET_REPO_SLUG || process.env.GITHUB_REPOSITORY || '',
+         project: process.env.BITBUCKET_REPO_SLUG || process.env.GITHUB_REPOSITORY?.split('/').pop() || '',
          name: null,
          site: undefined,
          sitename: '',

@@ -6,14 +6,15 @@ import packageJson from '../../package.json';
 import * as FS from 'fs';
 import * as Path from 'path';
 import syncDirectories from '../lib/syncDirectories';
-import { exec } from '../lib/exec';
+import { exec } from '../lib/util/exec';
 import fetch from 'node-fetch';
-import log from '../lib/log';
+import log from '../lib/util/log';
 import { getCommitMessage } from '../lib/shared';
-import { Provider } from 'src/provider/types';
+import { type Provider } from '../provider/types';
 import bitbucket from '../provider/bitbucket';
 import github from '../provider/github';
 import { loadAndApplySecrets } from '../lib/secrets/infisical';
+import { gitExec } from '../lib/util/gitExec';
 
 interface Args {
    source: string;
@@ -153,7 +154,7 @@ save2repo --source ./build
 
    let repoUrl = ARGS.destination;
    const sourceDirectory = ARGS.source;
-   const branchName = ARGS.branch;
+   const branchName = ARGS.branch || '';
    const buildNumber = ARGS.number;
    const gitEmail = ARGS.git_email;
    const gitName = ARGS.git_name;
@@ -188,10 +189,10 @@ save2repo --source ./build
 
       log(`Destination Repository: ${repoUrl}`);
 
-      const gitLog = await exec(`git log --pretty=format:"%s"`);
+      const gitLog = await gitExec(['log', '--pretty=format:"%s"']);
 
       log(`Checking if branch ${branchName} already exists ...`);
-      const branchExists = await exec(`git ls-remote ${repoUrl} refs/*/${branchName}`);
+      const branchExists = await gitExec(['ls-remote', repoUrl, `refs/*/${branchName}`]);
       log(`→  Branch exists: ${branchExists}`);
 
       // create repository directory
@@ -202,18 +203,18 @@ save2repo --source ./build
 
       if (branchExists) {
          log(`- Branch ${branchName} already exists, checking out.`);
-         await exec(`git clone --branch ${branchName} --depth 10 ${repoUrl} .`);
+         await gitExec(['clone', '--branch', branchName, '--depth', '10', repoUrl, '.']);
       } else {
          log(`- Branch name ${branchName} doesn't exist yet - will create.`);
-         await exec(`git clone --depth 1 ${repoUrl} .`);
-         await exec(`git checkout --orphan ${branchName}`);
-         await exec(`git rm -rfq --ignore-unmatch .`);
+         await gitExec(['clone', '--depth', '1', repoUrl, '.']);
+         await gitExec(['checkout', '--orphan', branchName]);
+         await gitExec(['rm', '-rfq', '--ignore-unmatch', '.']);
       }
 
+      await gitExec(['config', 'user.email', gitEmail]);
+      await gitExec(['config', 'user.name', gitName]);
+      await gitExec(['config', 'http.postBuffer', '157286400']);
       await exec(`
-           git config --global user.email ${gitEmail}
-           git config --global user.name ${gitName}
-           git config http.postBuffer 157286400
            touch .rsync-exclude.txt
            echo ".gitignore" >> .rsync-exclude.txt
            echo ".git" >> .rsync-exclude.txt
@@ -228,13 +229,13 @@ save2repo --source ./build
 
       await exec(`
            rm -f .rsync-exclude.txt
-           git add -u
-           git add -A .
        `);
+      await gitExec(['add', '-u']);
+      await gitExec(['add', '-A', '.']);
 
       // find new commit messages
       {
-         const gitdiff = await exec(`git diff --color=never --staged .gitlog`);
+         const gitdiff = await gitExec(['diff', '--color=never', '--staged', '.gitlog']);
          const added: string[] = [];
          const removed: string[] = [];
          gitdiff.split(/[\n\r]+/).forEach((line) => {
@@ -251,7 +252,7 @@ save2repo --source ./build
 
       const gitDiff = await (async () => {
          try {
-            return await exec(`git diff-index HEAD --`);
+            return await gitExec(['diff-index', 'HEAD', '--']);
          } catch (error) {
             return true;
          }
@@ -264,9 +265,9 @@ save2repo --source ./build
             ...output,
             ...hvPublishOutput,
          });
-         await exec(`git commit -a -m "${message}"`);
-         output.commit = (await exec(`git rev-parse HEAD`)).trim();
-         await exec(`git push origin ${branchName}`);
+         await gitExec(['commit', '-a', '-m', message]);
+         output.commit = (await gitExec(['rev-parse', 'HEAD'])).trim();
+         await gitExec(['push', 'origin', branchName || '']);
          log(`✅  Pushed changes to build repository`);
 
          if (tagValue) {
@@ -275,8 +276,8 @@ save2repo --source ./build
             }
 
             if (typeof tagValue === 'string') {
-               await exec(`git tag ${tagValue}`);
-               await exec(`git push origin ${tagValue}`);
+               await gitExec(['tag', tagValue]);
+               await gitExec(['push', 'origin', tagValue]);
                log(`✅  Pushed tag ${tagValue} to build repository`);
             } else {
                output.tag = tagValue;

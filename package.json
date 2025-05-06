@@ -1,9 +1,9 @@
 {
 	"name": "@hv/publish",
-	"version": "3.0.0-alpha.6",
-	"description": "Publish static website to Hinderling Volkart Frontend Development Site",
+	"version": "3.0.0-alpha.12",
+	"description": "Publish static website to DEPT.dev",
 	"main": "index.js",
-	"author": "Severin Klaus <sk@hinderlingvolkart.com>",
+	"author": "Severin Klaus <severin.klaus@deptagency.com>",
 	"license": "MIT",
 	"dependencies": {
 		"ansi-colors": "^4.1.1",
@@ -20,6 +20,7 @@
 		"version": "npm version patch",
 		"patch": "npm version patch",
 		"deploy": "npm publish --access public",
+		"deploy:next": "npm publish --tag next",
 		"build": "tsc",
 		"start": "node dist/index.js",
 		"dev": "ts-node src/index.ts"
