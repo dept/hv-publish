@@ -1,0 +1,44 @@
+import type { ISecretBundle } from 'infisical-node/lib/types/models'
+import fetch from 'node-fetch'
+
+export async function loadSecrets(token: string | undefined = process.env.INFISICAL_TOKEN) {
+   if (!token) {
+      return {}
+   }
+   console.log("Loading secrets from infisical with token: ", token)
+
+
+   const { secrets }: { secrets: { secretKey: string, secretValue: string }[] } = await fetch("https://eu.infisical.com/api/v3/secrets/raw", {
+      headers: {
+         'Authorization': `Bearer ${token}`,
+         'Content-Type': 'application/json',
+      },
+   }).then(res => res.json())
+
+   const variables: Record<string, string> = {}
+   for (const secret of secrets) {
+      if (typeof secret.secretValue === 'string') {
+         variables[secret.secretKey] = secret.secretValue
+      }
+   }
+   console.log("- ✅ Loaded secrets from infisical: ", Object.keys(variables))
+   return variables
+}
+
+/**
+ * Load secrets from Infisical and apply them to process.env without overwriting existing values
+ */
+export async function loadAndApplySecrets(token?: string | undefined) {
+   const secrets = await loadSecrets(token || process.env.INFISICAL_TOKEN)
+
+   // Apply secrets to process.env without overwriting existing values
+   for (const [key, value] of Object.entries(secrets)) {
+      if (process.env[key] === undefined) {
+         process.env[key] = value
+      }
+   }
+
+   return secrets
+}
+
+

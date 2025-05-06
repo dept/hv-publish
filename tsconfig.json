@@ -24,10 +24,12 @@
       "baseUrl": "./",
       "esModuleInterop": true,
       "skipLibCheck": true,
-      "forceConsistentCasingInFileNames": true
+      "forceConsistentCasingInFileNames": true,
+      "resolveJsonModule": true
    },
    "include": [
-      "src/**/*"
+      "src/**/*",
+      "package.json"
    ],
    "exclude": [
       "node_modules",

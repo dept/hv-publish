@@ -1,13 +1,22 @@
 import * as Color from 'ansi-colors';
-import axios from 'axios';
 // Note: Netlify package doesn't have TypeScript definitions
 const Netlify = require('netlify');
 import * as FS from 'fs';
+import fetch from 'node-fetch'
 
 interface DeployArgs {
-   sitename: string;
-   site: string;
+   /**
+    * Netlify API token
+    */
    netlify: string;
+   /**
+    * Netlify site name
+    */
+   sitename: string;
+   /**
+    * Netlify site id
+    */
+   site: string;
    source: string;
    commit: {
       subject: string;
@@ -58,19 +67,19 @@ async function deployToNetlify(args: DeployArgs): Promise<string> {
          },
       });
 
-      // Assigning site to HV Team
+      // Assigning site to Dept Switzerland Team
       // this is unfortunately not part of Netlify's open api
-      console.log(Color.cyan('Assigning to HV Team'));
+      console.log(Color.cyan('Assigning to Dept Switzerland Team'));
 
-      await axios({
-         url: `https://api.netlify.com/api/v1/sites/${site.id}/transfer`,
-         data: {
-            account_id: '5a573203a6188f7ad3e2362c',
-         },
+      await fetch(`https://api.netlify.com/api/v1/sites/${site.id}/transfer`, {
          method: 'POST',
          headers: {
-            Authorization: `Bearer ${args.netlify}`,
+            'Authorization': `Bearer ${args.netlify}`,
+            'Content-Type': 'application/json',
          },
+         body: JSON.stringify({
+            account_id: '5a573203a6188f7ad3e2362c',
+         }),
       });
    }
 
