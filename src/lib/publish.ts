@@ -5,7 +5,6 @@ import { getCommitInfo } from './getCommitInfo'
 import { getCommitMessage } from './shared'
 import deployToNetlify from './publish/netlify'
 import deployToCloudflare from './publish/cloudflare'
-import fetch from 'node-fetch'
 import { gitExec } from './util/gitExec'
 
 interface CommitAuthor {
@@ -77,18 +76,6 @@ async function saveToHvify(data: HvifyData) {
 	})
 	const result = await response.json()
 
-	if (process.env.GITHUB_TOKEN) {
-		await setGithubStatus({
-			state: 'success',
-			description: 'Deploy to dept.dev succeeded',
-			context: 'dept.dev',
-			target_url: data.url,
-			sha: process.env.GITHUB_SHA!,
-			repo: process.env.GITHUB_REPOSITORY!.split('/')[1],
-			owner: process.env.GITHUB_REPOSITORY!.split('/')[0],
-			github_token: process.env.GITHUB_TOKEN,
-		})
-	}
 
 	console.log('⬇   ⬇   ⬇   ⬇   ⬇   ⬇   ⬇   ⬇')
 	console.dir(result, { colors: true })
@@ -175,7 +162,7 @@ async function publish(args: PublishArgs) {
 		})
 	}
 
-	return saveToHvify({
+	const result = await saveToHvify({
 		url: deploy_url,
 		commit: commit.hash,
 		branch: commit.branch,
@@ -184,6 +171,45 @@ async function publish(args: PublishArgs) {
 		comitted_at: commit.date,
 		author: `${commit.author.name} <${commit.author.email}>`,
 	})
+
+	if (process.env.GITHUB_TOKEN) {
+		try {
+
+			const statusConfig = {
+				sha: process.env.GITHUB_SHA!,
+				repo: process.env.GITHUB_REPOSITORY!.split('/')[1],
+				owner: process.env.GITHUB_REPOSITORY!.split('/')[0],
+				github_token: process.env.GITHUB_TOKEN,
+			}
+			await setGithubStatus({
+				state: 'success',
+				description: `Deploy to ${ARGS.platform} succeeded`,
+				context: 'dept.dev',
+				target_url: deploy_url,
+				...statusConfig,
+			})
+			await setGithubStatus({
+				state: 'success',
+				description: `Deploy to dept.dev succeeded (v${result.deploy.index})`,
+				context: 'dept.dev',
+				target_url: `https://${result.deploy.project}-v${result.deploy.index}.dept.dev`,
+				...statusConfig,
+			})
+		} catch (error) {
+			console.warn(
+				`❌ Could not set GitHub status. You probably want to set permissions for the GITHUB_TOKEN to allow status updates, e.g.:
+			
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      statuses: write
+      contents: read
+`
+			)
+		}
+	}
+
 }
 
 async function setBitbucketStatus(name: string, url: string, key = "build") {

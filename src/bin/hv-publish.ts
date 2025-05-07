@@ -31,7 +31,7 @@ async function main() {
 
    const ARGS: PublishArgs = Object.assign(
       {
-         netlify: process.env.NETLIFY_ACCESS_TOKEN,
+         netlify: process.env.NETLIFY_AUTH_TOKEN,
          cloudflare: process.env.CLOUDFLARE_API_TOKEN,
          cloudflareAccountId: process.env.CLOUDFLARE_ACCOUNT_ID,
          hvify: process.env.HVIFY_TOKEN || '',
@@ -101,7 +101,7 @@ Options:
       hasInputError = true
    }
    if (ARGS.platform === 'netlify' && !ARGS.netlify) {
-      console.log(Color.red('- Missing: netlify or $NETLIFY_ACCESS_TOKEN'))
+      console.log(Color.red('- Missing: netlify or $NETLIFY_AUTH_TOKEN'))
       hasInputError = true
    }
    if (ARGS.platform === 'cloudflare' && !ARGS.cloudflare) {

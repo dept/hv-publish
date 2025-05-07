@@ -7,7 +7,6 @@ import * as FS from 'fs';
 import * as Path from 'path';
 import syncDirectories from '../lib/syncDirectories';
 import { exec } from '../lib/util/exec';
-import fetch from 'node-fetch';
 import log from '../lib/util/log';
 import { getCommitMessage } from '../lib/shared';
 import { type Provider } from '../provider/types';

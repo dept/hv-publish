@@ -1,8 +1,6 @@
 import * as Color from 'ansi-colors';
-// Note: Netlify package doesn't have TypeScript definitions
-const Netlify = require('netlify');
+import { exec } from '../util/exec';
 import * as FS from 'fs';
-import fetch from 'node-fetch'
 
 interface DeployArgs {
    /**
@@ -23,88 +21,65 @@ interface DeployArgs {
    };
 }
 
-// Using more permissive types since Netlify SDK doesn't have proper TS definitions
-interface NetlifySite {
-   id: string;
-   [key: string]: any;  // Allow other properties
-}
-
-interface DeployResult {
-   deploy: {
-      deploy_ssl_url: string;
-      [key: string]: any;  // Allow other properties
-   };
-}
-
-interface NetlifyClient {
-   getSite: (args: { site_id: string }) => Promise<NetlifySite>;
-   createSite: (args: { body: { name: string; force_ssl: boolean } }) => Promise<NetlifySite>;
-   deploy: (site_id: string, build_dir: string, opts: any) => Promise<DeployResult>;
-}
-
-// Using any for client since we don't have proper types
 async function deployToNetlify(args: DeployArgs): Promise<string> {
-   const netlify_name = `${args.sitename}`;
-   const netlify_site = `${args.site}`;
-
    console.log(Color.bold('Deploying to Netlify'));
-   const client: NetlifyClient = new Netlify(args.netlify);
-   let site: NetlifySite | false = false;
+   const { netlify, sitename, site, source, commit } = args;
+
+   // Set Netlify token as environment variable for CLI
+   process.env.NETLIFY_AUTH_TOKEN = netlify;
+
+   // Add headers file for cache control
+   FS.writeFileSync(`${source}/_headers`, '/*\n  Cache-Control: public, max-age=31536000\n');
 
    try {
-      console.log(Color.cyan('Checking site'), netlify_site);
-      site = await client.getSite({
-         site_id: netlify_site,
-      });
-   } catch (error: unknown) {
-      // Creating a site (if not yet)
-      console.log(Color.cyan('Site not found. Creating'), netlify_site);
+      console.log(Color.cyan('Deploying files...'));
 
-      site = await client.createSite({
-         body: {
-            name: netlify_name,
-            force_ssl: true,
-         },
-      });
+      // Build the deploy command
+      let deployCommand = `npx --yes netlify-cli deploy --json --dir ${source}`;
 
-      // Assigning site to Dept Switzerland Team
-      // this is unfortunately not part of Netlify's open api
-      console.log(Color.cyan('Assigning to Dept Switzerland Team'));
+      // Add site ID if provided
+      if (site) {
+         deployCommand += ` --site=${site}`;
+      }
 
-      await fetch(`https://api.netlify.com/api/v1/sites/${site.id}/transfer`, {
-         method: 'POST',
-         headers: {
-            'Authorization': `Bearer ${args.netlify}`,
-            'Content-Type': 'application/json',
-         },
-         body: JSON.stringify({
-            account_id: '5a573203a6188f7ad3e2362c',
-         }),
-      });
+      // Add message
+      if (commit && commit.subject) {
+         deployCommand += ` --message="${commit.subject.replace(/"/g, "'")}"`;
+      }
+
+
+      // Execute deployment
+      const result = await exec(deployCommand);
+
+      // Parse the JSON output to get the deploy URL
+      const deployOutput = JSON.parse(result);
+      const deployUrl = deployOutput.deploy_url || deployOutput.url;
+
+      if (!deployUrl) {
+         throw new Error('Could not find deployment URL in netlify-cli output');
+      }
+
+      console.log(Color.cyan('Deployed to'), site || sitename);
+      console.log(Color.green.bold(`Successfully deployed to`), Color.magenta.bold(deployUrl));
+
+      return deployUrl;
+
+   } catch (error: any) {
+      console.log(Color.yellow('Deployment issue:'), error.message);
+
+      // If site doesn't exist, create it first
+      if (error.message.includes('site not found') || (!site && !error.message.includes('already exists'))) {
+         console.log(Color.cyan('Site not found. Creating new site...'));
+
+         // Create site with name
+         await exec(`npx --yes netlify-cli sites:create --name=${sitename} --json`);
+
+         // Retry deployment
+         return deployToNetlify(args);
+      }
+
+      throw error;
    }
-
-   console.log(Color.cyan('Site for'), netlify_site);
-
-   // Add headers file
-   FS.writeFileSync(`${args.source}/_headers`, '/*\n  Cache-Control: public, max-age=31536000\n');
-
-   // Uploading files, actually deploying
-   const functionsDir = `${args.source}/functions`;
-
-   const result: DeployResult = await client.deploy(netlify_site, args.source, {
-      fnDir: FS.existsSync(functionsDir) ? functionsDir : null,
-      draft: true,
-      message: args.commit.subject,
-      parallelUpload: 30,
-      statusCb: (statusObj: { msg: string }) => {
-         console.log(`- ${statusObj.msg}`);
-      },
-   });
-
-   console.log(Color.cyan('Deployed to'), netlify_site);
-   console.log(Color.green.bold(`Successfully deployed to`), Color.magenta.bold(result.deploy.deploy_ssl_url));
-
-   return result.deploy.deploy_ssl_url;
 }
 
 export default deployToNetlify; 

@@ -1,19 +1,19 @@
 {
 	"name": "@hv/publish",
-	"version": "3.0.0-alpha.12",
+	"version": "3.0.0",
 	"description": "Publish static website to DEPT.dev",
 	"main": "index.js",
 	"author": "Severin Klaus <severin.klaus@deptagency.com>",
 	"license": "MIT",
+	"engines": {
+		"node": ">=18.0.0"
+	},
 	"dependencies": {
 		"ansi-colors": "^4.1.1",
 		"base-64": "^1.0.0",
 		"fs-extra": "^9.1.0",
-		"infisical-node": "^1.5.1",
 		"is-absolute": "^1.0.0",
 		"minimist": "^1.2.5",
-		"netlify": "^6.1.16",
-		"node-fetch": "^2.7.0",
 		"readdir-enhanced": "^6.0.4"
 	},
 	"scripts": {

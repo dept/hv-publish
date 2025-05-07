@@ -1,4 +1,3 @@
-import fetch from 'node-fetch'
 import Color from 'ansi-colors';
 
 export async function loadSecrets(token: string | undefined = process.env.INFISICAL_TOKEN) {

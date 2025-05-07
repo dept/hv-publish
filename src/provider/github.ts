@@ -1,5 +1,4 @@
 import Color from 'ansi-colors';
-import fetch, { type RequestInit } from 'node-fetch';
 import log from '../lib/util/log';
 import { Provider, ProviderOptions } from './types';
 
@@ -62,7 +61,6 @@ async function getJSON(url: string, options: RequestInit = {}): Promise<any> {
             Authorization: `token ${token}`,
             'Content-Type': 'application/json',
             'Accept': 'application/vnd.github.v3+json',
-            'User-Agent': 'node-fetch'
          },
          ...options
       }
