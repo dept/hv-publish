@@ -13,7 +13,6 @@ import { type Provider } from '../provider/types';
 import bitbucket from '../provider/bitbucket';
 import github from '../provider/github';
 import { loadAndApplySecrets } from '../lib/secrets/infisical';
-import { gitExec } from '../lib/util/gitExec';
 
 interface Args {
    source: string;
@@ -44,13 +43,14 @@ interface Output {
 }
 
 async function main() {
+   console.log(Color.white.bgBlue.bold('HV Save2Repo'), Color.yellow.bgBlue.bold(`v${packageJson.version}`));
+
    // Load secrets from Infisical and apply to process.env
    await loadAndApplySecrets();
 
-   const providers: Provider[] = [bitbucket, github];
+   const providers: Provider[] = [github, bitbucket];
    const provider = providers.find((provider: any) => provider.identify());
 
-   console.log(Color.white.bgBlue.bold('HV Save2Repo'), Color.yellow.bgBlue.bold(`v${packageJson.version}`));
 
    if (!provider) {
       log('No provider found', 'red');
@@ -107,13 +107,13 @@ save2repo --source ./build
 
     Website directory to upload. Default: ./build
 
--p | --path bitbucket_user/bitbucket_repo
+-p | --path user/repository
 
-    The bitbucket repository path (will only be considered if destination is not set).
-    Default: $BITBUCKET_REPO_OWNER/$BITBUCKET_REPO_SLUG-build
+    The repository path (will only be considered if destination is not set).
+    Default: $BITBUCKET_REPO_OWNER/$BITBUCKET_REPO_SLUG-build or $GITHUB_REPOSITORY-build
 
-    So if your current repository is hinderlingvolkart/project
-    your destination path will be hinderlingvolkart/project-build
+    So if your current repository is dept/project
+    your destination path will be dept/project-build
 
 -d | --destination https://user:password@domain.com/path/to/repository.git
 
@@ -139,11 +139,11 @@ save2repo --source ./build
       hasInputError = true;
    }
    if (!ARGS.branch) {
-      log('- Missing: branch or $BITBUCKET_BRANCH', 'red');
+      log('- Missing: branch or $BITBUCKET_BRANCH or $GITHUB_REF_NAME', 'red');
       hasInputError = true;
    }
    if (!ARGS.path && !ARGS.destination) {
-      log('- Missing: destination or $BITBUCKET_REPO_OWNER/$BITBUCKET_REPO_SLUG', 'red');
+      log('- Missing: destination or $GITHUB_REPOSITORY or $BITBUCKET_REPO_OWNER/$BITBUCKET_REPO_SLUG', 'red');
       hasInputError = true;
    }
    if (hasInputError) {
@@ -154,7 +154,6 @@ save2repo --source ./build
    let repoUrl = ARGS.destination;
    const sourceDirectory = ARGS.source;
    const branchName = ARGS.branch || '';
-   const buildNumber = ARGS.number;
    const gitEmail = ARGS.git_email;
    const gitName = ARGS.git_name;
    let tagValue = ARGS.tag;
@@ -193,6 +192,12 @@ save2repo --source ./build
       log(`Checking if branch ${branchName} already exists ...`);
       const branchExists = await gitExec(['ls-remote', repoUrl, `refs/*/${branchName}`]);
       log(`→  Branch exists: ${branchExists}`);
+
+      // Clean up any existing repo directory first
+      if (FS.existsSync(repoDir)) {
+         log(`Removing existing ${repoDir} directory`);
+         await exec(`rm -rf ${repoDir}`);
+      }
 
       // create repository directory
       await exec(`mkdir ${repoDir};`);
@@ -320,6 +325,15 @@ save2repo --source ./build
    await save2repo();
    log('✅  save2repo!');
 }
+
+
+
+async function gitExec(args: string[], options: { cwd?: string } = {}) {
+   const gitArgs = [...args];
+   const cmd = `git ${gitArgs.map(a => `'${a.replace(/'/g, `'\\''`)}'`).join(' ')}`;
+   return exec(cmd, options);
+}
+
 
 // Call the main function
 main().catch((error) => log(`Error: ${error}`, 'red'));

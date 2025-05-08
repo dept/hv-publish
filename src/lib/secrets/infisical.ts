@@ -4,7 +4,7 @@ export async function loadSecrets(token: string | undefined = process.env.INFISI
    if (!token) {
       return {}
    }
-   console.log("Loading secrets from infisical with token: ", token)
+   console.log("Loading secrets from infisical ...")
 
 
    const { secrets }: { secrets: { secretKey: string, secretValue: string }[] } = await fetch("https://eu.infisical.com/api/v3/secrets/raw", {
@@ -20,7 +20,7 @@ export async function loadSecrets(token: string | undefined = process.env.INFISI
          variables[secret.secretKey] = secret.secretValue
       }
    }
-   console.log("- ✅ Loaded secrets from infisical: ", Object.keys(variables))
+   console.log("- ✅ Loaded secrets from infisical:\n", Object.keys(variables).map(key => `- ${key}`).join("\n"))
    return variables
 }
 

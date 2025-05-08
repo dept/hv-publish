@@ -6,6 +6,7 @@ import { getCommitMessage } from './shared'
 import deployToNetlify from './publish/netlify'
 import deployToCloudflare from './publish/cloudflare'
 import { gitExec } from './util/gitExec'
+import { createDeployment, setDeploymentStatus } from '../provider/github-deployments'
 
 interface CommitAuthor {
 	name: string;
@@ -173,6 +174,21 @@ async function publish(args: PublishArgs) {
 	})
 
 	if (process.env.GITHUB_TOKEN) {
+		/* this can be referenced in a workflow like this:
+
+			jobs:
+			build-and-deploy:
+				runs-on: ubuntu-latest
+
+				# Mark this job as a deployment and let GitHub
+				# show the button that links to the URL we capture
+				environment:
+					name: pr-${{ github.event.pull_request.number }}
+					url:  ${{ steps.deploy.outputs.site_url }}
+
+		*/
+		FS.appendFileSync(process.env.GITHUB_OUTPUT!, `site_url=${deploy_url}\n`);
+
 		try {
 
 			const statusConfig = {
@@ -204,6 +220,47 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       statuses: write
+      contents: read
+`
+			)
+		}
+
+
+		try {
+			const cfg = {
+				sha: process.env.GITHUB_SHA!,
+				repo: process.env.GITHUB_REPOSITORY!.split('/')[1],
+				owner: process.env.GITHUB_REPOSITORY!.split('/')[0],
+				github_token: process.env.GITHUB_TOKEN!,
+			};
+			// 1️⃣ create the deployment
+			const deploymentId = await createDeployment({
+				...cfg,
+				description: `Deploying commit ${cfg.sha}`,
+				environment: 'preview',
+			});
+
+
+			await setDeploymentStatus({
+				deployment_id: deploymentId,
+				state: 'success',
+				environment_url: deploy_url,
+				log_url: process.env.GITHUB_SERVER_URL +
+					`/${cfg.owner}/${cfg.repo}/actions/runs/${process.env.GITHUB_RUN_ID}`,
+				description: 'Preview is ready ✨',
+				...cfg,
+			});
+
+
+		} catch (error) {
+			console.warn(
+				`❌ Could not set GitHub deployment status. You probably want to set permissions for the GITHUB_TOKEN to allow deployment status updates, e.g.:
+			
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      deployments: write
       contents: read
 `
 			)
