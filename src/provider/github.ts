@@ -21,7 +21,12 @@ const provider: Provider = {
       const repoPath = options.path;
       if (!repoPath) throw new Error('Repository path is required');
 
-      return `https://x-access-token:${env('BUILD_ACCESS_GITHUB') || env('GITHUB_ACCESS_TOKEN')}@github.com/${repoPath}.git`;
+      const token = env('BUILD_ACCESS_GITHUB') || env('GITHUB_ACCESS_TOKEN')
+      if (!token) {
+         throw new Error('No GitHub token found. Please set BUILD_ACCESS_GITHUB.')
+      }
+
+      return `https://x-access-token:${token}@github.com/${repoPath}.git`;
    },
 };
 
