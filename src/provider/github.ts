@@ -1,5 +1,3 @@
-import Color from 'ansi-colors';
-import log from '../lib/util/log';
 import { Provider, ProviderOptions } from './types';
 
 const provider: Provider = {
@@ -23,50 +21,11 @@ const provider: Provider = {
       const repoPath = options.path;
       if (!repoPath) throw new Error('Repository path is required');
 
-      log(`Checking availability of GitHub build repository: ${Color.magenta(repoPath)}`);
-      const repoInfo = await getApi(`repos/${repoPath}`);
-
-      if (repoInfo.message !== 'Not Found') {
-         log(`☑️  Found build repository «${repoInfo.name}»`);
-      } else {
-         log(`➕  Creating new build repository ${repoPath}`);
-         const [owner, repoName] = repoPath.split('/');
-         const newProjectData = {
-            name: repoName,
-            private: true,
-            description: `Build repository for ${env('GITHUB_REPOSITORY')}`,
-         };
-
-         const newProjectResult = await getApi(`user/repos`, {
-            method: 'POST',
-            body: JSON.stringify(newProjectData),
-         });
-         log(`New destination project:\n${JSON.stringify(newProjectResult, null, 2)}`);
-      }
-      return `https://x-access-token:${env('GITHUB_ACCESS_TOKEN') || env('GITHUB_TOKEN')}@github.com/${repoPath}.git`;
+      return `https://x-access-token:${env('BUILD_ACCESS_GITHUB') || env('GITHUB_ACCESS_TOKEN')}@github.com/${repoPath}.git`;
    },
 };
 
-async function getApi(path: string, options: RequestInit = {}): Promise<any> {
-   return await getJSON(`https://api.github.com/${path}`, options);
-}
 
-async function getJSON(url: string, options: RequestInit = {}): Promise<any> {
-   const token = env('GITHUB_ACCESS_TOKEN') || env('GITHUB_TOKEN');
-   const response = await fetch(
-      url,
-      {
-         method: 'GET',
-         headers: {
-            Authorization: `token ${token}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/vnd.github.v3+json',
-         },
-         ...options
-      }
-   );
-   return await response.json();
-}
 
 function env(key: string): string | undefined {
    return process.env[key];
