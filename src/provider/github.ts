@@ -1,3 +1,4 @@
+import { retrieveGithubAppToken } from '../lib/github/auth';
 import { Provider, ProviderOptions } from './types';
 
 const provider: Provider = {
@@ -21,7 +22,7 @@ const provider: Provider = {
       const repoPath = options.path;
       if (!repoPath) throw new Error('Repository path is required');
 
-      const token = env('BUILD_ACCESS_GITHUB') || env('GITHUB_ACCESS_TOKEN')
+      const token = await retrieveGithubAppToken()
       if (!token) {
          throw new Error('No GitHub token found. Please set BUILD_ACCESS_GITHUB.')
       }
