@@ -15,3 +15,11 @@
 ## [3.0.3] - 2025-05-12
 
 - Retrieve Github token from app secrets
+
+## [3.0.4] - 2025-05-14
+
+- fix: Cloudflare would not deploy with uppercase in project name, so we make them lowercase.
+
+## [3.0.5] - 2025-05-14
+
+- avoid warning about wrangler being missing and being installed

@@ -24,12 +24,15 @@ async function deployToCloudflare(args: CloudflareDeploymentArgs): Promise<strin
       throw new Error('Missing required Cloudflare configuration')
    }
 
+   // Cloudflare pages doesn't allow uppercase characters in the sitename
+   const cfSitename = sitename.toLowerCase()
+
    // Set CLOUDFLARE_API_TOKEN for wrangler
    process.env.CLOUDFLARE_API_TOKEN = apiToken
 
    async function performDeploy() {
       console.log(Color.cyan('Deploying files...'))
-      let deployCommand = `npx wrangler pages deploy ${source} --project-name ${sitename}`
+      let deployCommand = `npx --yes wrangler pages deploy ${source} --project-name ${cfSitename}`
 
       if (branch !== 'main' && branch !== 'master') {
          deployCommand += ` --branch=${branch}`
@@ -61,7 +64,7 @@ async function deployToCloudflare(args: CloudflareDeploymentArgs): Promise<strin
    } catch (error: any) {
       // If deployment failed because project doesn't exist, create it and try again
       console.log(Color.cyan('Project not found. Creating new project...'))
-      await exec(`npx wrangler pages project create ${sitename} --production-branch=main`)
+      await exec(`npx --yes wrangler pages project create ${cfSitename} --production-branch=main`)
 
       // Retry the deployment
       return await performDeploy()
