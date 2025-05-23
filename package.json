@@ -1,6 +1,6 @@
 {
 	"name": "@hv/publish",
-	"version": "3.0.5",
+	"version": "3.0.6",
 	"description": "Publish static website to DEPT.dev",
 	"main": "index.js",
 	"author": "Severin Klaus <severin.klaus@deptagency.com>",

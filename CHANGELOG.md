@@ -1,8 +1,20 @@
 # Changelog
 
-## [2.0.12] - 2025-02-24
+## [3.0.6] - 2025-05-23
 
-- Replaced `hv.dev` with `dept.dev` (endpoint)
+- fix: Netlify deployment would fail when creating new sites
+
+## [3.0.5] - 2025-05-14
+
+- avoid warning about wrangler being missing and being installed
+
+## [3.0.4] - 2025-05-14
+
+- fix: Cloudflare would not deploy with uppercase in project name, so we make them lowercase.
+
+## [3.0.3] - 2025-05-12
+
+- Retrieve Github token from app secrets
 
 ## [3.0.0] - 2025-05-09
 
@@ -12,14 +24,6 @@
 - Removed heavy Dependencies (like Netlify) for much faster install
 - breaking: requires Node 18+
 
-## [3.0.3] - 2025-05-12
+## [2.0.12] - 2025-02-24
 
-- Retrieve Github token from app secrets
-
-## [3.0.4] - 2025-05-14
-
-- fix: Cloudflare would not deploy with uppercase in project name, so we make them lowercase.
-
-## [3.0.5] - 2025-05-14
-
-- avoid warning about wrangler being missing and being installed
+- Replaced `hv.dev` with `dept.dev` (endpoint)
